@@ -35,7 +35,7 @@ Count & Queen é um Blackjack com twist de RPG onde cada vitória ou derrota afe
 #### 1. Clone o repositório:
 
 ```bash
-git clone https://github.com/seu-usuario/count-queen.git
+git clone https://github.com/GustaGol0/count-queen.git
 cd count-queen
 ```
 
