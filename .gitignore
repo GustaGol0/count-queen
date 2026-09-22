@@ -16,3 +16,5 @@ venv/
 # Sistema Operacional
 .DS_Store
 Thumbs.db
+# Dependências locais de verificação
+.test-deps/

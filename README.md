@@ -1,313 +1,160 @@
-# 🎴 Count & Queen - Blackjack RPG
+# 🎴 Count & Queen — Blackjack RPG
 
-Um jogo de Blackjack com elementos de RPG, sistema de prestígio, lojas mágicas e escolha entre dois caminhos: Nobreza ou Tirania.
+Conquiste prestígio nas mesas de blackjack, forme afinidades com cartas e escolha
+entre a Nobreza e a Tirania. A jornada termina numa disputa pela coroa.
 
-![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+**Atualização 0.3.0:** campanha mais curta, economia revisada, modo rápido e um
+adversário final. Veja todas as mudanças em [CHANGELOG.md](CHANGELOG.md).
 
-## 📖 Sobre o Jogo
+## Instalação
 
-Count & Queen é um Blackjack com twist de RPG onde cada vitória ou derrota afeta seu prestígio no reino. Escolha entre seguir o caminho da nobreza e se tornar Rei/Rainha, ou abraçar a tirania e dominar através do medo.
-
-## ✨ Características
-
-- ⚔️ **Sistema de Prestígio**: Ganhe ou perca prestígio baseado em suas jogadas
-- 👑 **Títulos de Nobreza**: Desde Plebeu até Rei/Rainha (ou Tirano)
-- 🛒 **Empório Real**: Compre itens mágicos que alteram o gameplay
-- 🌑 **Sacrário do Segredo**: Caminho sombrio com poderes proibidos
-- 💎 **Afinidades com Cartas**: Forme pactos com cartas específicas para bônus
-- 🎲 **Eventos Aleatórios**: Encontros e desafios inesperados
-- 💾 **Save Automático**: Seu progresso é salvo automaticamente
-- 🏆 **Salão das Lendas**: Seus heróis são eternizados
-
-## 🎮 Como Jogar
-
-### 📋 Requisitos
-
-- **Python 3.7+** instalado
-- Biblioteca **colorama**
-- Terminal com suporte a cores (PowerShell, CMD, ou terminal do VSCode)
-
----
-
-### 🚀 Instalação
-
-#### 1. Clone o repositório:
+Requer Python 3.10 ou superior e um terminal com suporte a UTF-8.
 
 ```bash
 git clone https://github.com/GustaGol0/count-queen.git
 cd count-queen
+python -m pip install -r requirements.txt
+python main.py
 ```
 
-#### 2. Instale as dependências:
+No Windows, você também pode usar `py` no lugar de `python`.
+O comando antigo `python count_queen.py` continua funcionando.
+
+## Como jogar
+
+Chegue o mais perto possível de 21 sem ultrapassar. Figuras valem 10; o Ás vale
+11 ou 1. Um Ás com uma carta de valor 10 na distribuição inicial é blackjack e
+paga 3:2. Blackjack vence um 21 com mais cartas; dois blackjacks empatam.
+
+| Momento | Comandos |
+| --- | --- |
+| Entre rodadas | `j` ou Enter: jogar; `m`: mochila; `r`: modo rápido; `s`: salvar e sair |
+| Aposta | Número inteiro positivo; Enter repete a última aposta, limitada ao saldo |
+| Sua vez | `p`: pedir; `s`: parar; `d`: dobrar; `sp`: dividir; `des`: desistir |
+| Encontro com loja | Enter: visitar; `s`: ignorar |
+
+O jogo mostra apenas as ações permitidas. Dobrar compra uma carta final. Dividir
+exige um par e permite até quatro mãos; um 21 após divisão não é blackjack natural.
+Desistir devolve metade da aposta. O seguro, disponível com a Manilha da Sorte,
+custa metade da aposta e retorna três vezes esse custo se o dealer tiver blackjack.
+
+O modo rápido remove pausas e esperas artificiais, mantendo as escolhas. Você
+continua podendo ler os resultados no histórico do terminal.
+
+## A campanha
+
+Cada jornada começa com 200 fichas. Vitórias avançam seu caminho e derrotas
+retiram progresso. Apostar uma proporção maior do saldo aumenta o risco e o
+prestígio envolvido. Ases, mãos fortes e blackjack influenciam as recompensas.
+
+- **Nobreza:** alcance +10.000 de prestígio para desafiar o Regente.
+- **Tirania:** um pacto no Sacrário muda seu caminho; alcance -10.000 para desafiar o Regente.
+- **Coroação:** vença três rodadas antes de perder três. Empates não contam.
+  Em um split, o saldo de mãos vencidas e perdidas determina o resultado da rodada.
+  O Regente compra até chegar a 18; os outros adversários param em 17.
+- **Nova tentativa:** perder a disputa sem falir devolve o progresso a ±9.000.
+- **Derrota da jornada:** ficar com menos de uma ficha encerra a partida.
+
+O cenário e o adversário mudam conforme o progresso: Taverna da Fronteira,
+Torneio do Castelo, Salão dos Nobres, Corte Real e Disputa pela Coroa. A disputa
+final não é interrompida por lojas ou eventos. Cada caminho tem seu próprio epílogo.
+
+| Prestígio positivo | Título masculino / feminino |
+| --- | --- |
+| 0–9 | Plebeu / Plebeia |
+| 10–49 | Cavaleiro / Dama |
+| 50–149 | Barão / Baronesa |
+| 150–499 | Visconde / Viscondessa |
+| 500–1.499 | Conde / Condessa |
+| 1.500–4.999 | Duque / Duquesa |
+| 5.000–9.999 | Príncipe / Princesa |
+| 10.000 e disputa vencida | Rei / Rainha |
+
+Na Tirania, as faixas negativas correspondentes levam de Malandro/Malandra a
+Flagelo do Reino. Vencer a disputa concede o título de Tirano/Tirana.
+
+## Itens e afinidades
+
+| Item | Efeito |
+| --- | --- |
+| Bênção dos Quatro Reinos | +25% de lucro por naipe além do primeiro |
+| Força do Sete | +75% de lucro ao vencer com um 7 |
+| Joias Gêmeas | Novas divisões grátis após o primeiro split pago; até quatro mãos |
+| Manilha da Sorte | Habilita o seguro quando o dealer mostra um Ás |
+| Caleidoscópio do Acaso | Escolha entre três cartas no primeiro pedido/dobra; um uso por rodada, compartilhado entre mãos |
+| Pacto do Tirano | Amplifica o prestígio ganho e perdido |
+| Espelho do Tirano | Concede fichas nas penalidades de derrota/desistência |
+| Manto da Nobreza | Tributo por rodada de 25 fichas por nível, baseado no prestígio absoluto |
+
+O Caleidoscópio não altera a distribuição inicial. Afinidades concedem +15% de lucro
+por nível da melhor afinidade presente na mão, até nível 5. Os bônus de afinidades,
+Força do Sete e Bênção são somados e nunca ultrapassam x3 do lucro base; não
+multiplicam a devolução da aposta.
+
+O Empório permite duas compras e um ritual por visita. Preços de itens e rituais
+têm piso de 2% do saldo; o ritual também depende do nível da carta escolhida.
+Ofertas e descontos ficam fixos durante a visita. Comprar uma relíquia no Sacrário
+sela o caminho da Tirania; os serviços e requisitos são exibidos antes da escolha.
+
+## Lojas e eventos
+
+Encontros são verificados após cada rodada concluída, inclusive blackjack do dealer.
+
+| Encontro | Primeira rodada elegível | Chance por tentativa | Garantido na tentativa |
+| --- | --- | --- | --- |
+| Empório Real | 3 | 20% | 8ª |
+| Sacrário do Segredo | 5 | 15% | 15ª |
+| Andarilho Misterioso | 6 | 5% | 20ª |
+| Desafio de Alto Risco | 11 | 3% | 25ª |
+
+Uma aparição zera a espera daquele encontro. Só uma loja aparece por rodada:
+a diferente da última tem prioridade, e a outra é sorteada se a primeira não
+aparecer. Rodadas bloqueadas não contam como tentativas. Retomar o jogo ou abrir
+a mochila não refaz sorteios. Os contadores são salvos junto com a jornada.
+
+O Andarilho oferece trocas e apostas opcionais. O Desafio requer pelo menos
+500 de prestígio absoluto e 100 fichas. Sua aposta é 10% do saldo, com mínimo
+de 100; vitória avança 150 de prestígio no caminho escolhido, derrota retira 60
+e recusa retira 15. O evento não aparece durante a coroação.
+
+## Saves e atualização
+
+O arquivo `save.json` fica sempre na raiz do projeto. Partidas, encontros,
+preferências e placar da coroação são salvos automaticamente, e também ao sair.
+A gravação preserva o arquivo anterior se a substituição falhar.
+
+**Iniciar Nova Lenda** zera rodadas e encontros, mantém o Salão das Lendas e salva
+o novo personagem imediatamente. Saves anteriores à atualização continuam
+carregando: saldo, inventário e histórico são mantidos. As novas regras passam
+a valer, inclusive o limite de efeito das afinidades antigas acima de nível 5.
+Não é necessário apagar seu save para atualizar. O save pessoal não vai ao GitHub.
+
+## Desenvolvimento e testes
 
 ```bash
-pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python tools/playthrough.py 42 nobreza
+python tools/playthrough.py 42 tirania
 ```
 
-**Ou instale manualmente:**
+O playtest usa a interface textual real, automatiza decisões e remove esperas;
+não modifica as regras. Seus saves e transcrições ficam numa pasta temporária
+informada ao terminar. Não altera o save pessoal.
 
-```bash
-pip install colorama
+O GitHub Actions executa os testes em Python 3.10, 3.12 e 3.13.
+
+```text
+main.py                 Entrada principal
+count_queen.py          Entrada compatível com a primeira versão
+count_queen/models.py   Cartas, mãos, jogadores e dealer
+count_queen/logic.py    Prestígio e títulos
+count_queen/campaign.py Campanha e economia
+count_queen/events.py   Sorteios e limites de espera
+count_queen/game.py     Rodadas e encerramento da jornada
+count_queen/persistence.py Salvamento
+count_queen/ui/         Menus e terminal
+tests/                 Testes automatizados
 ```
 
-#### 3. Execute o jogo:
-
-```bash
-python count_queen.py
-```
-
-**Ou, se `python` não funcionar:**
-
-```bash
-py count_queen.py
-```
-
----
-
-### 🃏 Regras Básicas
-
-#### **Blackjack Tradicional**
-
-- O objetivo é chegar o mais próximo possível de **21 pontos** sem estourar
-- Cartas numéricas valem seu valor (2-10)
-- J, Q, K valem **10 pontos**
-- Ás vale **11** (ou 1 se estourar)
-- **Blackjack** = 21 pontos com 2 cartas (Ás + figura)
-
-#### **Comandos Durante o Jogo**
-
-- **`p`** (Pedir) - Compra uma nova carta
-- **`s`** (Parar) - Mantém a mão atual e passa a vez
-- **`d`** (Dobrar) - Dobra a aposta e recebe apenas 1 carta final
-- **`sp`** (Split) - Divide um par em duas mãos separadas
-- **`des`** (Desistir) - Recupera metade da aposta (penalidade de prestígio)
-
----
-
-### 👑 Sistema de Prestígio
-
-#### **Caminho da Nobreza** (Padrão)
-
-- ✅ **Ganhe prestígio** ao vencer partidas
-- ❌ **Perca prestígio** ao perder ou desistir
-- 🎯 **Objetivo:** Alcançar **100.000 de prestígio** para se tornar Rei/Rainha
-
-#### **Caminho da Tirania** (Sombrio)
-
-- ⚠️ Se ativa ao comprar itens no **Sacrário do Segredo**
-- 🔄 **Inverte o sistema:** Perde prestígio ao vencer, ganha ao perder
-- 🎯 **Objetivo:** Alcançar **-100.000 de prestígio** para se tornar Tirano/Tirana
-
-#### **Títulos de Nobreza:**
-
-```
-Prestígio          Título
-─────────────────────────────────
-100.000+           Rei/Rainha
-50.000 - 99.999    Príncipe/Princesa
-15.000 - 49.999    Duque/Duquesa
-5.000 - 14.999     Conde/Condessa
-1.500 - 4.999      Visconde/Viscondessa
-500 - 1.499        Barão/Baronesa
-100 - 499          Cavaleiro/Dama
-0 - 99             Plebeu/Plebeia
-```
-
-#### **Títulos da Tirania:**
-
-```
-Prestígio          Título
-─────────────────────────────────
--100.000 ou menos  Tirano/Tirana
--50.000 a -99.999  Flagelo do Reino
--15.000 a -49.999  Senhor/Senhora da Guerra
--5.000 a -14.999   Usurpador/Usurpadora
--1.500 a -4.999    Mestre/Mestra Vigarista
--500 a -1.499      Ladrão/Ladra de Estrada
--100 a -499        Foragido/Foragida
--1 a -99           Malandro/Malandra
-```
-
----
-
-### 🛒 Sistema de Lojas
-
-#### **Empório Real** (Aparece aleatoriamente)
-
-Itens que melhoram suas chances:
-
-- **Bênção dos Quatro Reinos** (400 fichas) - Multiplica lucro por naipes únicos
-- **Força do Sete** (777 fichas) - Ganhos x7 ao vencer com um 7
-- **Joias Gêmeas** (900 fichas) - Split grátis em novos pares
-- **Manilha da Sorte** (800 fichas) - Compre seguro contra Blackjack do dealer
-- **Caleidoscópio do Acaso** (2.500 fichas) - Veja e escolha cartas futuras
-
-**Limitações:**
-
-- Máximo de **2 compras** por visita
-- Máximo de **1 ritual de afinidade** por visita
-
-#### **Sacrário do Segredo** (Aparece raramente)
-
-Itens poderosos com consequências:
-
-- **Espelho do Tirano** (750 prestígio) - Converte perda de prestígio em fichas (x2)
-- **Manto da Nobreza** (600 prestígio) - Tributo de fichas por rodada
-- **Pacto do Tirano** (250 prestígio) - Dobra ganhos e perdas de prestígio
-
-⚠️ **AVISO:** Comprar aqui te força ao **Caminho da Tirania**!
-
----
-
-### 💎 Sistema de Afinidades
-
-Crie pactos com cartas específicas para bônus permanentes!
-
-**Como funciona:**
-
-1. No **Empório Real**, use o ritual de afinidade
-2. Escolha uma carta (2-10, J, Q, K, A)
-3. Cada nível aumenta **+50% de ganho** ao vencer com essa carta na mão
-
-**Exemplo:**
-
-- Afinidade com **Ás** Nível 3 = **+150% fichas** ao vencer com um Ás na mão
-- Custo aumenta exponencialmente: 150 → 225 → 337 → ...
-
----
-
-### 🎲 Eventos Aleatórios
-
-#### **Andarilho Misterioso** (5% de chance)
-
-Oferece trocas arriscadas:
-
-- Trocar fichas por prestígio
-- Trocar prestígio por fichas
-- Apostar fichas em jogo de sorte
-
-#### **Desafio de Alto Risco** (3% de chance)
-
-- Requer prestígio alto (5.000+)
-- Aposta obrigatória de 500-2.000 fichas
-- Vitória: Dobra aposta + 500 prestígio
-- Derrota: Perde aposta + 200 prestígio
-
----
-
-### 💾 Sistema de Save
-
-- **Salvamento automático** após cada rodada
-- Arquivo gerado: `save.json` (na mesma pasta do jogo)
-- Continue de onde parou a qualquer momento!
-
----
-
-### 🏆 Condições de Vitória/Derrota
-
-#### **Vitória:**
-
-- 👑 **Nobreza:** Alcance 100.000 de prestígio
-- 💀 **Tirania:** Alcance -100.000 de prestígio
-
-#### **Derrota (Game Over):**
-
-- 💸 Fique sem fichas (0 ou menos)
-
-#### **Salão das Lendas:**
-
-- Heróis que **vencem** vão para a lista de **Heróis Verdadeiros** ⭐
-- Heróis que **perdem** vão para a lista de **Heróis Caídos** 💀
-
----
-
-### 💡 Dicas para Iniciantes
-
-1. **Comece conservador** - Aposte pequeno até pegar o ritmo
-2. **Aprenda quando parar** - Se tiver 17+, considere parar
-3. **Use o split com sabedoria** - Ideal para pares de 8 e Ases
-4. **Evite desistir muito** - Penalidades de prestígio aumentam
-5. **Priorize afinidades** - Invista em cartas que você vê com frequência
-6. **Escolha seu caminho cedo** - Nobreza ou Tirania afetam toda a estratégia
-
----
-
-### ❓ Problemas Comuns
-
-**"Python não reconhecido":**
-
-```bash
-# Tente usar 'py' ao invés de 'python'
-py count_queen.py
-```
-
-**"ModuleNotFoundError: No module named 'colorama'":**
-
-```bash
-# Instale a biblioteca
-pip install colorama
-```
-
-**Cores não aparecem no terminal:**
-
-- Use PowerShell, CMD ou terminal do VSCode
-- Git Bash pode ter problemas com cores
-
----
-
-### 🎯 Meta do Jogo
-
-**Desafie-se!**
-
-- Quantas rodadas você consegue sobreviver?
-- Consegue alcançar o título máximo?
-- Qual caminho é mais difícil: Nobreza ou Tirania?
-
-**Boa sorte, nobre aventureiro!** 🎴👑
-
-## 🎯 Objetivo
-
-**Caminho da Nobreza:** Alcance 100.000 de prestígio para se tornar Rei/Rainha
-
-**Caminho da Tirania:** Alcance -100.000 de prestígio para se tornar o Tirano supremo
-
-Cuidado para não perder todas as suas fichas!
-
-## 🃏 Itens Especiais
-
-### Empório Real
-
-- **Bênção dos Quatro Reinos**: Multiplica ganhos por naipes únicos
-- **Força do Sete**: Ganhos x7 ao vencer com um 7
-- **Caleidoscópio do Acaso**: Veja e escolha cartas futuras
-- E mais...
-
-### Sacrário do Segredo
-
-- **Espelho do Tirano**: Converte perdas de prestígio em fichas
-- **Pacto do Tirano**: Dobra ganhos e perdas de prestígio
-- **Manto da Nobreza**: Receba tributos periódicos
-
-## 🎲 Mecânicas
-
-- **Sistema de Split**: Divida pares e jogue múltiplas mãos
-- **Dobrar Aposta**: Dobre sua aposta para uma carta final
-- **Seguro**: Proteja-se contra Blackjack do dealer
-- **Desistência**: Recupere metade da aposta (com penalidade de prestígio)
-
-## 📜 Licença
-
-MIT License - sinta-se livre para usar, modificar e distribuir!
-
-## 🤝 Contribuições
-
-Contribuições são bem-vindas! Sinta-se livre para abrir issues ou pull requests.
-
-## 👤 Autor
-
-Criado com ❤️ para amantes de Blackjack e RPGs
-
----
-
-**Divirta-se jogando Count & Queen!** 🎴👑
+Se faltar o colorama, execute novamente `python -m pip install -r requirements.txt`.
+No Windows, use um terminal com UTF-8 para exibir os símbolos e acentos.
