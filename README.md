@@ -3,8 +3,8 @@
 Conquiste prestígio nas mesas de blackjack, forme afinidades com cartas e escolha
 entre a Nobreza e a Tirania. A jornada termina numa disputa pela coroa.
 
-**Atualização 0.3.0:** campanha mais curta, economia revisada, modo rápido e um
-adversário final. Veja todas as mudanças em [CHANGELOG.md](CHANGELOG.md).
+**Atualização 0.4.0:** mesa visual jogável no navegador, cartas animadas, controles
+por botão e salvamento durante a rodada. Veja os [patchnotes completos](CHANGELOG.md).
 
 ## Instalação
 
@@ -19,6 +19,49 @@ python main.py
 
 No Windows, você também pode usar `py` no lugar de `python`.
 O comando antigo `python count_queen.py` continua funcionando.
+
+## Mesa visual no navegador
+
+A mesa visual usa somente a biblioteca padrão do Python 3.10 ou superior.
+Para iniciar o jogo e abrir o navegador automaticamente, execute na pasta do projeto:
+
+```bash
+python jogar_visual.py
+```
+
+No Windows, também é possível abrir **`Jogar Count e Queen.bat`** com dois cliques.
+No macOS/Linux, use `python3 jogar_visual.py` quando necessário.
+
+Para iniciar somente o servidor, execute:
+
+```bash
+python -m count_queen.web
+```
+
+Abra **http://127.0.0.1:8000** no navegador. O servidor roda no seu computador;
+deixe o terminal aberto enquanto joga. Para encerrar, use Ctrl+C.
+Se a porta estiver ocupada, uma porta livre será escolhida e o endereço correto
+será mostrado no terminal. Também é possível escolher com `--port 8001`.
+O endereço `localhost`/`127.0.0.1` só funciona no computador que iniciou o jogo;
+não é um link de hospedagem ou compartilhamento.
+
+A primeira versão visual traz uma mesa medieval responsiva, criação de personagem,
+cartas animadas, apostas, pedir/parar/dobrar/dividir/desistir, resumo de resultados,
+histórico e progressão até a coroação. As ações indisponíveis ficam desabilitadas.
+Use os botões ou as teclas **P**, **S** e **D** durante sua vez; **?** abre a ajuda.
+A interface respeita a preferência do sistema por movimento reduzido.
+
+O progresso é salvo após cada ação em **`save_visual.json`**, incluindo baralho,
+carta oculta e mãos em andamento. Atualizar a página ou reiniciar o servidor retoma
+a mesma rodada. Essa jornada é independente de `save.json`, usado pelo terminal.
+Uma nova lenda fica disponível quando a jornada termina. Para testar com outro
+arquivo, use `python -m count_queen.web --save caminho/do/save.json` (a pasta deve existir).
+
+**Escopo desta primeira entrega:** lojas, eventos e aquisição de relíquias/afinidades
+ainda estão disponíveis apenas na campanha de terminal. O motor da mesa já trata
+os efeitos dos itens, seguro e escolha de cartas do Caleidoscópio, preparando a
+próxima etapa. O Sacrário e a escolha do caminho da Tirania ainda não têm tela visual.
+O servidor atende uma única jornada local e não oferece contas ou multiplayer.
 
 ## Como jogar
 

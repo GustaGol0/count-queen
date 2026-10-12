@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101b17" />
+    <title>Count & Queen — A caminho da coroa</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <svg
+      class="svg-library"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="crown" viewBox="0 0 48 48">
+          <path
+            d="m8 14 8 7 8-13 8 13 8-7-4 21H12L8 14Z M13 40h22 M12 30h24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="24" cy="25" r="2" fill="currentColor" />
+        </symbol>
+        <symbol id="diamond" viewBox="0 0 24 24">
+          <path
+            d="m12 3 8 9-8 9-8-9 8-9Z M4 12h16 M12 3l-3 9 3 9 3-9-3-9Z"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Count and Queen, início"
+        ><svg><use href="#crown" /></svg
+        ><span
+          >Count <i>&</i> Queen<small>UMA JORNADA PELA COROA</small></span
+        ></a
+      >
+      <span class="edition">BLACKJACK RPG <span>·</span> MESA VISUAL</span>
+      <nav aria-label="Menu">
+        <button class="quiet" id="help-button">
+          Como jogar <span class="key">?</span></button
+        ><button
+          class="icon-button"
+          id="inventory-button"
+          title="Relíquias e afinidades"
+          aria-label="Abrir relíquias e afinidades"
+        >
+          <svg><use href="#diamond" /></svg>
+        </button>
+      </nav>
+    </header>
+    <main class="layout">
+      <aside class="journey" aria-label="Sua jornada">
+        <div class="section-label">SUA JORNADA <span>01</span></div>
+        <div class="player-seal">
+          <svg><use href="#crown" /></svg>
+        </div>
+        <h1 id="player-name">Uma nova lenda</h1>
+        <p class="player-title" id="player-title">A coroa espera por você</p>
+        <div class="path-pill" id="path-label">
+          <span></span> Caminho da Nobreza
+        </div>
+        <div class="wealth">
+          <span class="coin">♜</span>
+          <div>
+            <span class="eyebrow">SUAS FICHAS</span
+            ><strong id="balance">200</strong>
+          </div>
+        </div>
+        <div class="prestige">
+          <div>
+            <span>Prestígio</span
+            ><strong id="prestige">0 <small>/ 10.000</small></strong>
+          </div>
+          <progress
+            id="progress"
+            value="0"
+            max="10000"
+            aria-label="Progresso até a coroa"
+          ></progress>
+          <p id="progress-caption">Toda lenda começa à mesa.</p>
+        </div>
+        <div class="divider"><span>♦</span></div>
+        <div class="section-label">O CAMINHO ATÉ O TRONO</div>
+        <ol class="route" id="route">
+          <li class="current">
+            <span>I</span>
+            <div>
+              Taverna da Fronteira<small>O início da sua história</small>
+            </div>
+          </li>
+          <li>
+            <span>II</span>
+            <div>Torneio do Castelo<small>500 de prestígio</small></div>
+          </li>
+          <li>
+            <span>III</span>
+            <div>Salão dos Nobres<small>1.500 de prestígio</small></div>
+          </li>
+          <li>
+            <span>IV</span>
+            <div>Corte Real<small>5.000 de prestígio</small></div>
+          </li>
+          <li>
+            <span>V</span>
+            <div>Disputa pela Coroa<small>10.000 de prestígio</small></div>
+          </li>
+        </ol>
+        <div class="sidebar-foot">
+          <span class="save-dot"></span
+          ><span id="save-status">Sua lenda começa aqui</span>
+        </div>
+      </aside>
+      <section class="game" aria-label="Mesa de blackjack">
+        <div class="table-heading">
+          <div>
+            <div class="eyebrow" id="chapter-label">
+              CAPÍTULO I · A FRONTEIRA
+            </div>
+            <h2 id="chapter">Taverna da Fronteira</h2>
+          </div>
+          <div class="round-counter">
+            <span class="eyebrow">RODADA</span><strong id="round">01</strong>
+          </div>
+        </div>
+        <div class="table" id="table">
+          <div class="table-inlay"></div>
+          <div class="dealer-area">
+            <div class="dealer-id">
+              <span class="dealer-seal">♜</span>
+              <div>
+                <span class="eyebrow">SEU ADVERSÁRIO</span>
+                <h3 id="dealer-name">Taberneiro</h3>
+              </div>
+              <span class="rule-tag" id="dealer-rule">Para em 17</span>
+            </div>
+            <div
+              class="cards dealer-cards"
+              id="dealer-cards"
+              aria-label="Cartas do adversário"
+            ></div>
+            <div class="hand-score" id="dealer-score">
+              UMA CARTA, UM DESTINO
+            </div>
+          </div>
+          <div class="table-center">
+            <div class="ornament">──── <span>♠</span> ────</div>
+            <div class="table-wordmark">COUNT <i>&</i> QUEEN</div>
+            <span>BLACKJACK PAGA 3:2</span>
+            <div class="bet-on-table" id="table-bet" hidden></div>
+          </div>
+          <div
+            class="player-area"
+            id="player-hands"
+            aria-label="Suas cartas"
+          ></div>
+          <div class="table-bottom-mark">
+            ♦ <span>A SORTE DISTRIBUI. VOCÊ DECIDE.</span> ♦
+          </div>
+        </div>
+        <section class="control-panel" aria-label="Ações da rodada">
+          <div class="status-row">
+            <div>
+              <span class="status-dot"></span
+              ><span id="status" role="status" aria-live="polite"
+                >Seu lugar à mesa está reservado.</span
+              >
+            </div>
+            <span class="shortcut-hint">SEU PRÓXIMO MOVIMENTO</span>
+          </div>
+          <form id="bet-form" class="bet-form">
+            <div class="bet-entry">
+              <label for="bet">SUA APOSTA</label>
+              <div class="bet-input">
+                <span>♜</span
+                ><input
+                  id="bet"
+                  name="bet"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="200"
+                  step="1"
+                  value="10"
+                  required
+                  aria-label="Valor da aposta"
+                />
+              </div>
+            </div>
+            <div class="chips" aria-label="Escolher aposta">
+              <button type="button" data-bet="10">10</button
+              ><button type="button" data-bet="25">25</button
+              ><button type="button" data-bet="50">50</button
+              ><button type="button" data-bet="100">100</button
+              ><button type="button" data-bet="all" class="all-in">Tudo</button>
+            </div>
+            <button class="primary deal-button" type="submit" id="deal">
+              Distribuir cartas <span>↗</span>
+            </button>
+          </form>
+          <div id="actions" class="actions" hidden></div>
+          <div id="result" class="result" hidden aria-live="polite"></div>
+          <div id="oracle" class="oracle" hidden></div>
+          <div id="error" class="error" role="alert" hidden></div>
+        </section>
+        <footer class="game-footer">
+          <span>♠ &nbsp; ♥ &nbsp; ♣ &nbsp; ♦</span
+          ><span>Uma boa mão muda a rodada. Uma escolha muda o reino.</span
+          ><button class="quiet" id="history-button">Histórico ↗</button>
+        </footer>
+      </section>
+      <aside class="chronicle" aria-label="Relíquias e crônica">
+        <div class="section-label">
+          SUAS RELÍQUIAS <svg><use href="#diamond" /></svg>
+        </div>
+        <div id="relics" class="relics"></div>
+        <div class="chronicle-heading">
+          <span class="section-label">CRÔNICA DA MESA</span
+          ><span class="live-dot"></span>
+        </div>
+        <div id="history" class="history"></div>
+        <blockquote>
+          “Uma coroa não se herda.<br />Conquista-se, carta a carta.”<cite
+            >— SUSSURROS DA CORTE</cite
+          >
+        </blockquote>
+      </aside>
+    </main>
+    <dialog id="welcome" class="welcome-dialog">
+      <div class="welcome-ornament">
+        <svg><use href="#crown" /></svg>
+      </div>
+      <div class="eyebrow">O PRIMEIRO PASSO ATÉ O TRONO</div>
+      <h2>Toda coroa tem<br />uma história.</h2>
+      <p>
+        A sua começa com 200 fichas e um lugar na taverna. Como o reino vai
+        chamar você?
+      </p>
+      <form id="new-game-form">
+        <label for="name">SEU NOME</label
+        ><input
+          id="name"
+          name="name"
+          maxlength="30"
+          placeholder="Nome da sua lenda"
+          autocomplete="nickname"
+          required
+        /><label for="gender">SEUS TÍTULOS</label
+        ><select id="gender">
+          <option value="h">Plebeu → Rei</option>
+          <option value="m">Plebeia → Rainha</option></select
+        ><button class="primary" type="submit">
+          Tomar meu lugar à mesa <span>↗</span>
+        </button>
+        <p id="welcome-error" class="error" role="alert" hidden></p>
+      </form>
+      <small>Seu progresso é salvo automaticamente nesta mesa.</small>
+    </dialog>
+    <dialog id="info-dialog">
+      <button class="dialog-close icon-button" aria-label="Fechar janela">
+        ×
+      </button>
+      <div id="info-content"></div>
+    </dialog>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 # Arquivos de save do jogo
 save.json
+save_visual.json
 
 # Python
 __pycache__/

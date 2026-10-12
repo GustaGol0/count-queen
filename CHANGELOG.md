@@ -1,5 +1,51 @@
 # Notas de atualização
 
+## 0.4.0 — A mesa ganha vida — 12/10/2026
+
+Count & Queen agora tem uma mesa visual jogável no navegador: feltro verde,
+detalhes em vinho e dourado, cartas em pergaminho e a jornada até a coroa.
+
+### Mesa e controles
+
+- Criação de personagem, cartas animadas e layout adaptado para telas menores.
+- Apostas por fichas e botões para pedir, parar, dobrar, dividir e desistir.
+  Ações indisponíveis ficam desabilitadas; divisões permitem até quatro mãos.
+- Atalhos P, S e D durante a vez do jogador e ajuda pela tecla ?.
+- Fichas, prestígio, título e progresso sempre à vista. Capítulos e adversários
+  acompanham a jornada, até a disputa contra o Regente.
+- Resumo de cada rodada e histórico das últimas 12 rodadas.
+- Animações respeitam a preferência do sistema por movimento reduzido.
+
+### Salvamento e inicialização
+
+- Salvamento automático após cada ação em `save_visual.json`, separado do
+  `save.json` da campanha de terminal.
+- Atualizar a página ou reiniciar o servidor retoma a mesma rodada, incluindo
+  baralho, carta oculta, mãos divididas e escolhas pendentes.
+- Pedidos repetidos ou enviados por uma janela desatualizada são rejeitados.
+  Se a gravação falhar, a ação é desfeita e o save anterior é preservado.
+- `python jogar_visual.py` inicia a mesa e abre o navegador automaticamente.
+  No Windows, também é possível abrir `Jogar Count e Queen.bat` com dois cliques.
+- A mesa visual exige Python 3.10 ou superior e não precisa de dependências extras.
+  Se a porta estiver ocupada, o inicializador escolhe uma porta livre.
+
+### Escopo desta versão
+
+- A interface visual inclui as rodadas e a progressão até a coroação.
+- Lojas, eventos, aquisição de relíquias/afinidades e escolha da Tirania pelo
+  Sacrário continuam disponíveis na campanha de terminal e aguardam telas próprias.
+- O motor visual já trata os efeitos dos itens, seguro e Caleidoscópio para a
+  próxima integração. Uma nova jornada visual começa sem esses itens.
+- A mesa roda localmente, para uma jornada por servidor. `localhost` funciona
+  no computador que iniciou o jogo; não é um endereço de hospedagem online.
+
+### Verificação
+
+- 61 testes automatizados passando, cobrindo também pagamentos, divisão de mãos,
+  seguro, Caleidoscópio, coroação, carta oculta e recuperação do save visual.
+- Fluxo jogável verificado no navegador, com retomada após atualização da página
+  e conferência do layout em larguras de 390, 768 e 1.024 pixels.
+
 ## 0.3.0 — A disputa pela coroa — 22/09/2026
 
 Esta atualização reúne as mudanças realizadas desde o início da revisão do projeto,
