@@ -1,203 +1,183 @@
-# 🎴 Count & Queen — Blackjack RPG
+# 🎴 Count & Queen — A Estrada da Coroa
 
-Conquiste prestígio nas mesas de blackjack, forme afinidades com cartas e escolha
-entre a Nobreza e a Tirania. A jornada termina numa disputa pela coroa.
+Um blackjack roguelite de fantasia medieval. Escolha caminhos em quatro regiões,
+modifique seu próprio baralho, combine 24 relíquias com 12 juramentos e desafie
+sete bosses — até o Rei Sem Rosto, que responde à história da sua jornada.
 
-**Atualização 0.4.0:** mesa visual jogável no navegador, cartas animadas, controles
-por botão e salvamento durante a rodada. Veja os [patchnotes completos](CHANGELOG.md).
+**Versão 0.5.0:** campanha visual completa por mapa. Leia os [patchnotes](CHANGELOG.md)
+e o [catálogo de relíquias, juramentos e bosses](CATALOGO.md).
 
-## Instalação
+## Jogar
 
-Requer Python 3.10 ou superior e um terminal com suporte a UTF-8.
+Requer **Python 3.10 ou superior** e um navegador moderno. A campanha visual usa
+somente a biblioteca padrão: não precisa instalar dependências Python adicionais.
 
 ```bash
 git clone https://github.com/GustaGol0/count-queen.git
 cd count-queen
-python -m pip install -r requirements.txt
-python main.py
-```
-
-No Windows, você também pode usar `py` no lugar de `python`.
-O comando antigo `python count_queen.py` continua funcionando.
-
-## Mesa visual no navegador
-
-A mesa visual usa somente a biblioteca padrão do Python 3.10 ou superior.
-Para iniciar o jogo e abrir o navegador automaticamente, execute na pasta do projeto:
-
-```bash
 python jogar_visual.py
 ```
 
-No Windows, também é possível abrir **`Jogar Count e Queen.bat`** com dois cliques.
+No Windows, abra **Jogar Count e Queen.bat** ou use `py jogar_visual.py`.
 No macOS/Linux, use `python3 jogar_visual.py` quando necessário.
+O inicializador abre o navegador e escolhe uma porta livre se 8000 estiver ocupada.
+Mantenha a janela do terminal aberta enquanto joga; Ctrl+C encerra o servidor.
 
-Para iniciar somente o servidor, execute:
+Para iniciar sem abrir o navegador:
 
 ```bash
-python -m count_queen.web
+python -m count_queen.web --port 8000
 ```
 
-Abra **http://127.0.0.1:8000** no navegador. O servidor roda no seu computador;
-deixe o terminal aberto enquanto joga. Para encerrar, use Ctrl+C.
-Se a porta estiver ocupada, uma porta livre será escolhida e o endereço correto
-será mostrado no terminal. Também é possível escolher com `--port 8001`.
-O endereço `localhost`/`127.0.0.1` só funciona no computador que iniciou o jogo;
-não é um link de hospedagem ou compartilhamento.
+Use o endereço informado no terminal. `localhost` e `127.0.0.1` funcionam somente
+no computador que iniciou o jogo. O servidor atende uma única jornada local;
+não há contas, multiplayer ou hospedagem pública automática.
 
-A primeira versão visual traz uma mesa medieval responsiva, criação de personagem,
-cartas animadas, apostas, pedir/parar/dobrar/dividir/desistir, resumo de resultados,
-histórico e progressão até a coroação. As ações indisponíveis ficam desabilitadas.
-Use os botões ou as teclas **P**, **S** e **D** durante sua vez; **?** abre a ajuda.
-A interface respeita a preferência do sistema por movimento reduzido.
+## A jornada
 
-O progresso é salvo após cada ação em **`save_visual.json`**, incluindo baralho,
-carta oculta e mãos em andamento. Atualizar a página ou reiniciar o servidor retoma
-a mesma rodada. Essa jornada é independente de `save.json`, usado pelo terminal.
-Uma nova lenda fica disponível quando a jornada termina. Para testar com outro
-arquivo, use `python -m count_queen.web --save caminho/do/save.json` (a pasta deve existir).
+Você começa com 200 fichas e 52 cartas tradicionais. Seu adversário compra de outro
+baralho. As cartas usadas vão para o descarte e a composição permanece entre
+rodadas e encontros. Quando a pilha está curta, o descarte volta e é embaralhado;
+nenhuma carta em uma mão volta à pilha durante a rodada.
 
-**Escopo desta primeira entrega:** lojas, eventos e aquisição de relíquias/afinidades
-ainda estão disponíveis apenas na campanha de terminal. O motor da mesa já trata
-os efeitos dos itens, seguro e escolha de cartas do Caleidoscópio, preparando a
-próxima etapa. O Sacrário e a escolha do caminho da Tirania ainda não têm tela visual.
-O servidor atende uma única jornada local e não oferece contas ou multiplayer.
+Cada região oferece três juramentos: escolha um, com efeitos até o fim da jornada.
+Juramentos não se repetem; os pares Fortuna/Glória e Lâmina/Quinta Carta não são
+oferecidos juntos na mesma construção. Relíquias e outros juramentos podem se
+combinar. As descrições avisam quando uma escolha bloqueia sua estratégia atual.
 
-## Como jogar
+O mapa é um tabuleiro escuro com estradas douradas. Escolha um nó conectado da
+próxima camada. A Bússola permite uma travessia lateral extra por região, sem
+pular camadas ou bosses. O boss é sorteado uma vez e revelado antes do juramento.
+Recarregar a página não refaz nenhuma dessas escolhas.
 
-Chegue o mais perto possível de 21 sem ultrapassar. Figuras valem 10; o Ás vale
-11 ou 1. Um Ás com uma carta de valor 10 na distribuição inicial é blackjack e
-paga 3:2. Blackjack vence um 21 com mais cartas; dois blackjacks empatam.
-
-| Momento | Comandos |
+| Região | Bosses possíveis |
 | --- | --- |
-| Entre rodadas | `j` ou Enter: jogar; `m`: mochila; `r`: modo rápido; `s`: salvar e sair |
-| Aposta | Número inteiro positivo; Enter repete a última aposta, limitada ao saldo |
-| Sua vez | `p`: pedir; `s`: parar; `d`: dobrar; `sp`: dividir; `des`: desistir |
-| Encontro com loja | Enter: visitar; `s`: ignorar |
+| Fronteira dos Esquecidos | Madame Ferrugem ou Frei Sete-Sinos, 50% cada |
+| Cidade das Máscaras | Íris e Véspera ou O Cobrador de Nomes, 50% cada |
+| Corte Sem Sol | A Duquesa das Cinzas ou O Astrônomo Cego, 50% cada |
+| O Trono Vazio | O Rei Sem Rosto, sempre |
 
-O jogo mostra apenas as ações permitidas. Dobrar compra uma carta final. Dividir
-exige um par e permite até quatro mãos; um 21 após divisão não é blackjack natural.
-Desistir devolve metade da aposta. O seguro, disponível com a Manilha da Sorte,
-custa metade da aposta e retorna três vezes esse custo se o dealer tiver blackjack.
+As três primeiras regiões têm cinco camadas de encontros e um boss. A última
+oferece três camadas de preparação antes do Rei. Os pares de bosses têm a mesma
+dificuldade-alvo; o balanceamento inicial ainda deve ser refinado com partidas humanas.
 
-O modo rápido remove pausas e esperas artificiais, mantendo as escolhas. Você
-continua podendo ler os resultados no histórico do terminal.
+## Encontros e recursos
 
-## A campanha
-
-Cada jornada começa com 200 fichas. Vitórias avançam seu caminho e derrotas
-retiram progresso. Apostar uma proporção maior do saldo aumenta o risco e o
-prestígio envolvido. Ases, mãos fortes e blackjack influenciam as recompensas.
-
-- **Nobreza:** alcance +10.000 de prestígio para desafiar o Regente.
-- **Tirania:** um pacto no Sacrário muda seu caminho; alcance -10.000 para desafiar o Regente.
-- **Coroação:** vença três rodadas antes de perder três. Empates não contam.
-  Em um split, o saldo de mãos vencidas e perdidas determina o resultado da rodada.
-  O Regente compra até chegar a 18; os outros adversários param em 17.
-- **Nova tentativa:** perder a disputa sem falir devolve o progresso a ±9.000.
-- **Derrota da jornada:** ficar com menos de uma ficha encerra a partida.
-
-O cenário e o adversário mudam conforme o progresso: Taverna da Fronteira,
-Torneio do Castelo, Salão dos Nobres, Corte Real e Disputa pela Coroa. A disputa
-final não é interrompida por lojas ou eventos. Cada caminho tem seu próprio epílogo.
-
-| Prestígio positivo | Título masculino / feminino |
+| Encontro | Objetivo e recompensa |
 | --- | --- |
-| 0–9 | Plebeu / Plebeia |
-| 10–49 | Cavaleiro / Dama |
-| 50–149 | Barão / Baronesa |
-| 150–499 | Visconde / Viscondessa |
-| 500–1.499 | Conde / Condessa |
-| 1.500–4.999 | Duque / Duquesa |
-| 5.000–9.999 | Príncipe / Princesa |
-| 10.000 e disputa vencida | Rei / Rainha |
+| Mesa comum | Duas vitórias em até três rodadas; +3 de prestígio, 20 fichas e escolha de relíquia comum/incomum. |
+| Elite | Duas vitórias antes de duas derrotas; +7 de prestígio, 40 fichas e escolha de relíquia rara. |
+| Boss das regiões 1–2 | Três vitórias antes de três derrotas; +12 de prestígio, 80 fichas e escolha mítica. |
+| Boss da região 3 | Quatro vitórias antes de três derrotas; mesma categoria de recompensa. |
+| Empório | Até duas compras e um serviço: oficina por 35 fichas ou ritual de afinidade. |
+| Oficina | Uma intervenção gratuita: adicionar, remover, transformar ou marcar uma carta. |
+| Evento | Escolhas que afetam fichas, prestígio ou baralho; juramentos e influência abrem alternativas. |
+| Refúgio | 35 fichas, purificação de maldições ou uma bênção para o próximo encontro. |
+| Sacrário | Escolher Nobreza/Tirania, fazer oferendas ou aceitar uma carta maldita por fichas. |
 
-Na Tirania, as faixas negativas correspondentes levam de Malandro/Malandra a
-Flagelo do Reino. Vencer a disputa concede o título de Tirano/Tirana.
+Pagamentos de apostas são separados das recompensas de encontro. Perder uma mesa
+ou elite permite seguir com saldo suficiente, mas reduz o prestígio e não concede
+recompensa. Bosses permitem uma revanche, custando 30 fichas por número da região.
+Perder novamente ou desistir da revanche encerra a jornada.
 
-## Itens e afinidades
+Empates consomem uma rodada nas mesas comuns e não alteram o placar dos duelos.
+Após dois empates consecutivos, o próximo empate comum é decidido pelo menor
+número de cartas; persistindo a igualdade, você vence. Naturais e regras explícitas
+do Rei têm precedência. Em split, o saldo de mãos vencidas e perdidas decide a rodada.
 
-| Item | Efeito |
-| --- | --- |
-| Bênção dos Quatro Reinos | +25% de lucro por naipe além do primeiro |
-| Força do Sete | +75% de lucro ao vencer com um 7 |
-| Joias Gêmeas | Novas divisões grátis após o primeiro split pago; até quatro mãos |
-| Manilha da Sorte | Habilita o seguro quando o dealer mostra um Ás |
-| Caleidoscópio do Acaso | Escolha entre três cartas no primeiro pedido/dobra; um uso por rodada, compartilhado entre mãos |
-| Pacto do Tirano | Amplifica o prestígio ganho e perdido |
-| Espelho do Tirano | Concede fichas nas penalidades de derrota/desistência |
-| Manto da Nobreza | Tributo por rodada de 25 fichas por nível, baseado no prestígio absoluto |
+**Fichas** sustentam a sobrevivência: terminar sem ao menos uma ficha encerra a
+jornada, salvo o Coração da Rainha. Gastar a última ficha na loja/evento também
+pode encerrar a jornada. Apostas em andamento não contam como falência antecipada.
 
-O Caleidoscópio não altera a distribuição inicial. Afinidades concedem +15% de lucro
-por nível da melhor afinidade presente na mão, até nível 5. Os bônus de afinidades,
-Força do Sete e Bênção são somados e nunca ultrapassam x3 do lucro base; não
-multiplicam a devolução da aposta.
+**Prestígio** vai de 0 a 100. Define influência e títulos, abre alternativas em eventos
+a partir de 20 e desconto de 10% nas lojas a partir de 40. Ele não bloqueia o mapa.
+Nobreza e Tirania são caminhos narrativos separados. Ganhos vêm principalmente de
+encontros vencidos; perdas de mãos só custam prestígio quando um efeito explícito exige.
 
-O Empório permite duas compras e um ritual por visita. Preços de itens e rituais
-têm piso de 2% do saldo; o ritual também depende do nível da carta escolhida.
-Ofertas e descontos ficam fixos durante a visita. Comprar uma relíquia no Sacrário
-sela o caminho da Tirania; os serviços e requisitos são exibidos antes da escolha.
+## Baralho, relíquias e juramentos
 
-## Lojas e eventos
+- Quatro raridades, com seis relíquias cada: comum, incomum, raro e mítico.
+- Míticas só aparecem em recompensas de bosses; nunca nas lojas.
+- Escolha até três opções de recompensa (quatro em elites com Caçador de Coroas),
+  excluindo relíquias já possuídas. Se a categoria acabar, recebe 25 fichas extras.
+- Bônus de lucro são aditivos e limitados a ×3, sem multiplicar a devolução da aposta.
+- Afinidades concedem +15% de lucro por nível da melhor carta presente, até nível 5.
+- Cartas recebem no máximo uma marca: Real, Dourada, Quebradiça ou Maldita.
+- O baralho mantém ao menos 16 cartas permanentes e aceita até 80 cartas. No piso,
+  a marca Quebradiça desaparece em vez de destruir a carta.
+- Brasa e Carta da Coroa são cartas especiais temporárias dos respectivos bosses.
+- O Trono troca mãos sem mudar a propriedade das cartas: elas voltam ao dono ao descartar.
+- Dívida de juramento retém metade do lucro até ser paga. A Ampulheta cobra seu
+  empréstimo na próxima região; não oferece crédito na região final.
 
-Encontros são verificados após cada rodada concluída, inclusive blackjack do dealer.
+O [catálogo](CATALOGO.md) descreve todos os efeitos e os ajustes para prestígio 0–100.
 
-| Encontro | Primeira rodada elegível | Chance por tentativa | Garantido na tentativa |
-| --- | --- | --- | --- |
-| Empório Real | 3 | 20% | 8ª |
-| Sacrário do Segredo | 5 | 15% | 15ª |
-| Andarilho Misterioso | 6 | 5% | 20ª |
-| Desafio de Alto Risco | 11 | 3% | 25ª |
+## O Rei Sem Rosto
 
-Uma aparição zera a espera daquele encontro. Só uma loja aparece por rodada:
-a diferente da última tem prioridade, e a outra é sorteada se a primeira não
-aparecer. Rodadas bloqueadas não contam como tentativas. Retomar o jogo ou abrir
-a mochila não refaz sorteios. Os contadores são salvos junto com a jornada.
+O duelo tem três atos, duas vitórias por ato e um limite de quatro derrotas no total.
+Você recupera 50 fichas entre atos.
 
-O Andarilho oferece trocas e apostas opcionais. O Desafio requer pelo menos
-500 de prestígio absoluto e 100 fichas. Sua aposta é 10% do saldo, com mínimo
-de 100; vitória avança 150 de prestígio no caminho escolhido, derrota retira 60
-e recusa retira 15. O evento não aparece durante a coroação.
+1. **A Coroa se Lembra:** baralho adaptado à estratégia predominante da jornada,
+   anunciado ao entrar na região final.
+2. **O Preço dos Juramentos:** escolha uma entre duas cobranças baseadas nos seus
+   juramentos. Ao vencer, consagre um juramento e remova sua contrapartida.
+3. **Não Há Lugar Para Dois:** escolha Governar (limite 21; sacrifício de relíquia
+   para prever uma carta, uma vez por rodada) ou Usurpar (limite 22; Carta da Coroa
+   ajustável de 1 a 11, com empates comuns a favor do Rei).
 
-## Saves e atualização
+O epílogo combina seu caminho anterior com a escolha final. A vitória registra seu
+nome no Salão das Lendas e desbloqueia uma marca Real na primeira carta de cada
+jornada futura. O desbloqueio é aplicado automaticamente e persiste no save.
 
-O arquivo `save.json` fica sempre na raiz do projeto. Partidas, encontros,
-preferências e placar da coroação são salvos automaticamente, e também ao sair.
-A gravação preserva o arquivo anterior se a substituição falhar.
+## Controles e salvamento
 
-**Iniciar Nova Lenda** zera rodadas e encontros, mantém o Salão das Lendas e salva
-o novo personagem imediatamente. Saves anteriores à atualização continuam
-carregando: saldo, inventário e histórico são mantidos. As novas regras passam
-a valer, inclusive o limite de efeito das afinidades antigas acima de nível 5.
-Não é necessário apagar seu save para atualizar. O save pessoal não vai ao GitHub.
+Use os botões ou P (pedir), S (parar), D (dobrar) durante sua vez. ? abre a ajuda.
+O botão Baralho mostra composição e descarte; a Lente exibe contagens exatas da
+pilha restante. Relíquias e juramentos podem ser consultados a qualquer momento.
+A interface respeita a preferência por movimento reduzido.
 
-## Desenvolvimento e testes
+Cada ação grava `save_visual.json` atomicamente, incluindo os baralhos, mãos,
+mapa, eventos, ofertas, juramentos, placares e estado do sorteador. Atualizar a
+página ou reiniciar retoma exatamente dali. Ações de uma janela desatualizada
+são rejeitadas; uma falha de gravação desfaz o movimento em memória.
+
+Saves 0.4 são copiados para `save_visual.json.v1.bak` antes da migração. Nome,
+fichas, itens, caminho e afinidades são preservados; prestígio antigo é convertido
+por divisão por 100, limitado a 100. Apostas e seguro pendentes são devolvidos.
+A campanha começa no mapa da primeira região, pois o save antigo não contém mapas.
+
+Para testar sem tocar no save pessoal, use uma pasta existente:
 
 ```bash
+python -m count_queen.web --save caminho/do/teste.json
+```
+
+A campanha de terminal continua disponível com `python main.py`, após instalar
+`requirements.txt`. Suas [regras anteriores](LEGACY.md) e `save.json` são separados.
+
+## Desenvolvimento e verificação
+
+```bash
+python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
-python tools/playthrough.py 42 nobreza
-python tools/playthrough.py 42 tirania
+python tools/playthrough_adventure.py 200
 ```
 
-O playtest usa a interface textual real, automatiza decisões e remove esperas;
-não modifica as regras. Seus saves e transcrições ficam numa pasta temporária
-informada ao terminar. Não altera o save pessoal.
+O playtest automatiza decisões em jornadas completas e verifica retomadas periódicas
+por JSON. Ele não lê nem grava o save pessoal e não representa uma estratégia ótima.
+Para QA visual opcional, com Playwright e Chromium já instalados:
 
+```bash
+python tools/check_adventure_ui.py
+```
+
+A ferramenta usa saves temporários e informa a pasta das capturas de tela.
 O GitHub Actions executa os testes em Python 3.10, 3.12 e 3.13.
 
-```text
-main.py                 Entrada principal
-count_queen.py          Entrada compatível com a primeira versão
-count_queen/models.py   Cartas, mãos, jogadores e dealer
-count_queen/logic.py    Prestígio e títulos
-count_queen/campaign.py Campanha e economia
-count_queen/events.py   Sorteios e limites de espera
-count_queen/game.py     Rodadas e encerramento da jornada
-count_queen/persistence.py Salvamento
-count_queen/ui/         Menus e terminal
-tests/                 Testes automatizados
-```
-
-Se faltar o colorama, execute novamente `python -m pip install -r requirements.txt`.
-No Windows, use um terminal com UTF-8 para exibir os símbolos e acentos.
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `count_queen/adventure.py` | Mapa, combate, progressão, efeitos, bosses e persistência da campanha visual. |
+| `count_queen/content.py` | Catálogo de relíquias, juramentos, marcas e adversários. |
+| `count_queen/web.py` | Servidor local e API; adaptador de saves da mesa antiga mantido para regressões. |
+| `count_queen/web_ui/` | Interface da campanha. |
+| `count_queen/game.py` | Campanha anterior de terminal. |

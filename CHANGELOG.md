@@ -1,5 +1,56 @@
 # Notas de atualização
 
+## 0.5.0 — A Estrada da Coroa — 14/10/2026
+
+A campanha visual agora é uma jornada de blackjack por quatro regiões: escolha
+rotas, construa seu próprio baralho e enfrente adversários com regras próprias.
+
+### Mapa e progressão
+
+- Tabuleiro escuro com estradas douradas, caminhos alternativos e oito tipos de nó.
+- Mesas, elites, bosses, Empório, oficina, eventos, refúgios e Sacrário jogáveis.
+- Boss revelado antes do juramento; sorteios e ofertas permanecem fixos ao recarregar.
+- Prestígio de 0 a 100 como influência, separado de Nobreza/Tirania e do avanço no mapa.
+- Encontros com duração/placar limitados, recompensa própria e uma revanche paga por boss.
+
+### Construção da jornada
+
+- 24 relíquias: seis comuns, seis incomuns, seis raras e seis míticas.
+- Míticas exclusivas de vitórias contra bosses das três primeiras regiões.
+- 12 juramentos; escolha um entre três no começo de cada região, acumulando efeitos.
+- Baralhos separados para jogador e rival, persistentes durante seus encontros;
+  o baralho do jogador acompanha toda a jornada, com compra e descarte reais.
+- Oficina para adicionar, remover, transformar ou marcar cartas; quatro marcas,
+  com mínimo de 16 cartas permanentes e máximo de 80 cartas.
+- Afinidades, comércio, dívidas, purificação e pactos integrados à interface.
+
+### Sete bosses
+
+- Região 1: Madame Ferrugem ou Frei Sete-Sinos, 50% cada.
+- Região 2: Íris e Véspera ou O Cobrador de Nomes, 50% cada.
+- Região 3: A Duquesa das Cinzas ou O Astrônomo Cego, 50% cada.
+- Região final: O Rei Sem Rosto, com baralho adaptativo, cobranças de juramentos,
+  consagração e escolha entre Governar e Usurpar.
+- Epílogos conforme caminho e decisão final; desbloqueio de marca Real para jornadas futuras.
+
+### Ajustes para as novas regras
+
+- Manto da Nobreza concede de 5 a 25 fichas por rodada, conforme influência.
+- Penalidades de juramentos foram adaptadas à escala 0–100 e descritas no catálogo.
+- A marca Quebradiça preserva o piso de 16 cartas; o sacrifício de Governar é limitado a uma vez por rodada.
+- Trono Vazio devolve cartas ao baralho do dono ao descartar; Carta da Coroa não pode ser trocada.
+- Empates comuns têm desempate anunciado após duas ocorrências consecutivas.
+
+### Saves e verificação
+
+- Save completo após cada ação, incluindo mapa, escolhas, baralhos e estado do sorteador.
+- Migração de saves 0.4 com backup `.v1.bak`, recursos preservados e apostas pendentes devolvidas.
+- Campanha de terminal e seu save permanecem disponíveis com as regras anteriores.
+- Testes de efeitos, bosses, jornada, migração e gravação atômica; playtest de 200 jornadas
+  completas e QA no navegador em telas de desktop e celular.
+- Balanceamento inicial: os pares têm dificuldade-alvo equivalente, ainda sujeito a ajuste
+  com partidas humanas. A taxa de vitória do playtest não representa a dificuldade para todos os jogadores.
+
 ## 0.4.0 — A mesa ganha vida — 12/10/2026
 
 Count & Queen agora tem uma mesa visual jogável no navegador: feltro verde,
