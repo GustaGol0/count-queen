@@ -61,7 +61,7 @@ class Mesa:
             dados['dealer'] = None if not r.dealer else {
                 'nome': r.dealer.nome, 'limite': r.dealer.limite, 'mao': mao_json(r.dealer.maos[0])}
             dados['escolhas'] = [r.baralho.cartas.index(c) for c in r.escolhas]
-        return dados
+        return copy.deepcopy(dados)
 
     def restaurar(self, dados):
         if dados.get('versao') != 1:
@@ -225,6 +225,7 @@ def criar_servidor(mesa, host='127.0.0.1', port=8000):
 
 
 def main(abrir_navegador=False):
+    from .adventure import AdventureMesa
     parser = argparse.ArgumentParser(description='Count & Queen — mesa visual local')
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8000)
@@ -232,7 +233,7 @@ def main(abrir_navegador=False):
     parser.add_argument('--open', action='store_true', default=abrir_navegador,
                         help='Abre a mesa no navegador padrão.')
     args = parser.parse_args()
-    mesa = Mesa(args.save)
+    mesa = AdventureMesa(args.save)
     try:
         servidor = criar_servidor(mesa, args.host, args.port)
     except OSError as erro:

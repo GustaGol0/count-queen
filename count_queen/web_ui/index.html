@@ -43,8 +43,11 @@
           >Count <i>&</i> Queen<small>UMA JORNADA PELA COROA</small></span
         ></a
       >
-      <span class="edition">BLACKJACK RPG <span>·</span> MESA VISUAL</span>
+      <span class="edition"
+        >BLACKJACK ROGUELITE <span>·</span> A ESTRADA DA COROA</span
+      >
       <nav aria-label="Menu">
+        <button class="quiet" id="deck-button">Baralho</button>
         <button class="quiet" id="help-button">
           Como jogar <span class="key">?</span></button
         ><button
@@ -78,12 +81,12 @@
         <div class="prestige">
           <div>
             <span>Prestígio</span
-            ><strong id="prestige">0 <small>/ 10.000</small></strong>
+            ><strong id="prestige">0 <small>/ 100</small></strong>
           </div>
           <progress
             id="progress"
             value="0"
-            max="10000"
+            max="100"
             aria-label="Progresso até a coroa"
           ></progress>
           <p id="progress-caption">Toda lenda começa à mesa.</p>
@@ -131,6 +134,19 @@
             <span class="eyebrow">RODADA</span><strong id="round">01</strong>
           </div>
         </div>
+        <div
+          id="global-notice"
+          class="journey-notice"
+          role="status"
+          hidden
+        ></div>
+        <div id="global-error" class="error" role="alert" hidden></div>
+        <section
+          id="adventure-panel"
+          class="adventure-panel"
+          aria-live="polite"
+        ></section>
+        <section id="battle-rules" class="battle-rules" hidden></section>
         <div class="table" id="table">
           <div class="table-inlay"></div>
           <div class="dealer-area">
@@ -166,7 +182,11 @@
             ♦ <span>A SORTE DISTRIBUI. VOCÊ DECIDE.</span> ♦
           </div>
         </div>
-        <section class="control-panel" aria-label="Ações da rodada">
+        <section
+          class="control-panel"
+          id="control-panel"
+          aria-label="Ações da rodada"
+        >
           <div class="status-row">
             <div>
               <span class="status-dot"></span
@@ -222,6 +242,7 @@
           SUAS RELÍQUIAS <svg><use href="#diamond" /></svg>
         </div>
         <div id="relics" class="relics"></div>
+        <div id="oaths-summary"></div>
         <div class="chronicle-heading">
           <span class="section-label">CRÔNICA DA MESA</span
           ><span class="live-dot"></span>
@@ -241,8 +262,8 @@
       <div class="eyebrow">O PRIMEIRO PASSO ATÉ O TRONO</div>
       <h2>Toda coroa tem<br />uma história.</h2>
       <p>
-        A sua começa com 200 fichas e um lugar na taverna. Como o reino vai
-        chamar você?
+        A sua começa com 200 fichas, um baralho e quatro regiões pela frente.
+        Como o reino vai chamar você?
       </p>
       <form id="new-game-form">
         <label for="name">SEU NOME</label
