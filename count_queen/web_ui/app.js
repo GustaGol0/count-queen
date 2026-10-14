@@ -68,6 +68,55 @@ let state,
   busy = false,
   lastPhase = "",
   assetVersion;
+const sigils = {
+  manilha_sorte: "M4 5h8v6H4z M2 7h2v2H2z M12 7h2v2h-2z",
+  moeda_peregrino: "M5 2h6v2h2v8h-2v2H5v-2H3V4h2z M7 5v6h2V5z",
+  broche_prudencia: "M7 1h2v3h3v3h3v2h-3v3H9v3H7v-3H4V9H1V7h3V4h3z",
+  dedal_costureira: "M5 3h6v2h1v8H4V5h1z M6 6h1v1H6z M9 8h1v1H9z",
+  lente_escrivao: "M3 2h6v2h2v6H9v2H3v-2H1V4h2z M10 11h2v2h2v2h-3z",
+  ficha_cobre: "M4 2h8v2h2v8h-2v2H4v-2H2V4h2z M5 5h6v6H5z",
+  forca_sete: "M3 2h10v4h-2v3H9v3H7v3H4v-4h2V8h2V5H3z",
+  bencao_reinos_v2: "M2 2h5v5H2z M9 2h5v5H9z M2 9h5v5H2z M9 9h5v5H9z",
+  rosario_humildes:
+    "M4 2h2v2H4z M10 2h2v2h-2z M2 5h2v2H2z M12 5h2v2h-2z M4 8h2v2H4z M10 8h2v2h-2z M7 9h2v3h3v2H9v2H7v-2H4v-2h3z",
+  luvas_duelista: "M3 5h2V2h2v4h1V1h2v5h1V3h2v8h-2v3H5v-3H3z",
+  bussola_contrabandista:
+    "M6 1h4v2h3v3h2v4h-2v3h-3v2H6v-2H3v-3H1V6h2V3h3z M10 4H8v3H6v5h2V9h2z",
+  selo_mercador: "M4 1h8v6H9v3h4v4H3v-4h4V7H4z",
+  joias_gemeas: "M3 2h3v2h2v5H6v2H3V9H1V4h2z M10 5h3v2h2v5h-2v2h-3v-2H8V7h2z",
+  pacto_tirano: "M3 1h10v14H3z M5 4h6v1H5z M5 7h6v1H5z M8 10h3v3H8z",
+  espelho_tirano: "M5 1h6v2h2v7h-2v2H9v3H7v-3H5v-2H3V3h2z M6 4h4v5H6z",
+  tesoura_destino:
+    "M2 1h2v3h2v3h4V4h2V1h2v5h-2v3h-2v2h3v4H8v-4H7v4H2v-4h3V9H3V6H2z",
+  mascara_impostor: "M2 2h12v9h-2v2h-2v2H6v-2H4v-2H2z M4 5h3v3H4z M9 5h3v3H9z",
+  ampulheta_usurario:
+    "M3 1h10v2h-1v3h-2v4h2v3h1v2H3v-2h1v-3h2V6H4V3H3z M6 3v2h4V3z M6 11v2h4v-2z",
+  caleidoscopio_acaso:
+    "M6 1h4v3h3v3h2v3h-3v3H9v2H6v-3H3V9H1V6h3V3h2z M6 6h4v4H6z",
+  manto_nobreza: "M5 1h6v3h2v5h2v6H1V9h2V4h2z M7 4v8h2V4z",
+  coroa_22: "M1 4h2v3h3V4h1V1h2v3h1v3h3V4h2v8H1z M3 14h10v2H3z",
+  cetro_sentencas: "M6 1h4v2h2v4h-2v2H9v6H7V9H6V7H4V3h2z",
+  coracao_exilada: "M2 2h4v2h4V2h4v2h2v5h-2v2h-2v2h-2v2H6v-2H4v-2H2V9H0V4h2z",
+  trono_vazio: "M4 1h8v7h2v6h-2v2h-2v-3H6v3H4v-2H2V8h2z M6 3v5h4V3z",
+};
+function sigil(key) {
+  return `<svg class="pixel-sigil" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" fill-rule="evenodd" d="${sigils[key] || sigils.pacto_tirano}"/></svg>`;
+}
+const rarityLabels = {
+  comum: "Comum",
+  incomum: "Incomum",
+  raro: "Rara",
+  mitico: "Mítica",
+};
+function celebrate(key) {
+  const item = state.catalog.relics[key];
+  if (!item) return;
+  const dialog = $("loot-dialog");
+  dialog.className = `loot-dialog ${item.raridade}`;
+  $("loot-content").innerHTML =
+    `<div class="loot-rays" aria-hidden="true">${Array.from({ length: item.raridade === "mitico" ? 16 : item.raridade === "raro" ? 10 : 4 }, (_, i) => `<i style="--n:${i}"></i>`).join("")}</div><div class="eyebrow">RELÍQUIA ${rarityLabels[item.raridade].toUpperCase()} OBTIDA</div><div class="loot-art">${sigil(key)}</div><h2>${esc(item.nome)}</h2><p>${esc(item.descricao)}</p>`;
+  dialog.showModal();
+}
 function button(
   label,
   action,
@@ -123,7 +172,7 @@ function itemList(keys, catalog) {
   return keys
     .map(
       (k) =>
-        `<article class="relic-detail"><span class="rarity ${catalog[k]?.raridade || ""}">${esc(catalog[k]?.raridade || "Juramento")}</span><h3>${esc(catalog[k]?.nome || k)}</h3><p>${esc(catalog[k]?.descricao)}</p></article>`,
+        `<article class="relic-detail">${catalog[k]?.raridade ? sigil(k) : ""}<span class="rarity ${catalog[k]?.raridade || ""}">${esc(catalog[k]?.raridade || "Juramento")}</span><h3>${esc(catalog[k]?.nome || k)}</h3><p>${esc(catalog[k]?.descricao)}</p></article>`,
     )
     .join("");
 }
@@ -203,7 +252,7 @@ function combo(key) {
   return text;
 }
 function choiceCard(key, item, action, extra = "") {
-  return `<article class="choice-card ${item.raridade || ""}"><div class="eyebrow">${esc(item.raridade || "Juramento")}</div><span class="choice-emblem">${item.raridade === "mitico" ? "♛" : "◇"}</span><h3>${esc(item.nome)}</h3><p>${esc(item.descricao)}</p>${combo(key) ? `<p class="synergy">${esc(combo(key))}</p>` : ""}${extra}${button("Escolher", action, key, {}, "primary")}</article>`;
+  return `<article class="choice-card ${item.raridade || "oath-contract"}"><div class="eyebrow">${esc(rarityLabels[item.raridade] || "Contrato de juramento")}</div><span class="choice-emblem">${sigil(item.raridade ? key : "pacto_tirano")}</span><h3>${esc(item.nome)}</h3><p>${esc(item.descricao)}</p>${combo(key) ? `<p class="synergy">${esc(combo(key))}</p>` : ""}${extra}${button(item.raridade ? "Escolher" : "Assinar", action, key, {}, "primary")}</article>`;
 }
 function mapHTML() {
   const nodes = state.nodes,
@@ -258,7 +307,7 @@ function workshop() {
     "K",
     "A",
   ];
-  return `<h3>Uma carta pode mudar seu destino.</h3><p>Escolha uma intervenção. As mudanças duram até o fim da jornada; a ordem do baralho é preservada.</p><form id="workshop-form" class="workshop-form"><label for="work-card">CARTA DO SEU BARALHO</label><select id="work-card">${options}</select><label for="work-kind">INTERVENÇÃO</label><select id="work-kind"><option value="marcar">Aplicar uma marca</option><option value="transformar">Transformar o valor</option><option value="remover">Remover a carta</option><option value="adicionar">Adicionar uma nova carta</option></select><div id="rank-field" hidden><label for="work-rank">VALOR</label><select id="work-rank">${ranks.map((r) => `<option>${r}</option>`).join("")}</select></div><div id="mark-field"><label for="work-mark">MARCA</label><select id="work-mark">${Object.entries(
+  return `<h3>Oficina de cartas</h3><p>Escolha uma intervenção. As mudanças duram até o fim da jornada; a ordem do baralho é preservada.</p><form id="workshop-form" class="workshop-form"><label for="work-card">CARTA DO SEU BARALHO</label><select id="work-card">${options}</select><label for="work-kind">INTERVENÇÃO</label><select id="work-kind"><option value="marcar">Aplicar uma marca</option><option value="transformar">Transformar o valor</option><option value="remover">Remover a carta</option><option value="adicionar">Adicionar uma nova carta</option></select><div id="rank-field" hidden><label for="work-rank">VALOR</label><select id="work-rank">${ranks.map((r) => `<option>${r}</option>`).join("")}</select></div><div id="mark-field"><label for="work-mark">MARCA</label><select id="work-mark">${Object.entries(
     state.catalog.marks,
   )
     .map(
@@ -277,7 +326,7 @@ function renderAdventure() {
   let html = `<div class="eyebrow">${phaseNames[phase] || "A JORNADA"}</div>`;
   if (phase === "mapa") html += mapHTML();
   else if (phase === "juramento")
-    html += `<h3>Qual promessa vai acompanhar você?</h3><p>Escolha um entre três juramentos. Ele se acumula com suas escolhas anteriores e dura até o fim da jornada.</p><div class="boss-teaser">Boss desta região: <strong>${esc(s.boss.nome)}</strong><details><summary>Preparar-se para o adversário</summary><p>${esc(s.boss.descricao)}</p>${s.boss.style ? `<p>Resposta do Rei: ${esc(s.boss.style)} · rosto ${esc(s.boss.face)}.</p>` : ""}</details></div><div class="choice-grid">${s.offers.map((k) => choiceCard(k, s.catalog.oaths[k], "juramento")).join("")}</div>`;
+    html += `<h3>Assine um juramento</h3><p>Escolha um entre três juramentos. Ele se acumula com suas escolhas anteriores e dura até o fim da jornada.</p><div class="boss-teaser">Boss desta região: <strong>${esc(s.boss.nome)}</strong><details><summary>Preparar-se para o adversário</summary><p>${esc(s.boss.descricao)}</p>${s.boss.style ? `<p>Resposta do Rei: ${esc(s.boss.style)} · rosto ${esc(s.boss.face)}.</p>` : ""}</details></div><div class="choice-grid">${s.offers.map((k) => choiceCard(k, s.catalog.oaths[k], "juramento")).join("")}</div>`;
   else if (phase === "encontro") {
     const n = s.pending;
     const title =
@@ -306,15 +355,15 @@ function renderAdventure() {
     };
     html += `<div class="encounter-emblem">${glyph[n.type]}</div><h3>${esc(title)}</h3><p>${esc(n.type === "boss" ? s.boss.descricao : descriptions[n.type])}</p>${n.elite ? `<p class="rule-callout">${eliteRules[n.elite]}</p>` : ""}${n.type === "boss" ? "<p>Vitória: recompensa mítica (regiões 1–3). Uma revanche paga se você perder. O Rei concede um desbloqueio permanente.</p>" : ""}<div class="actions">${button("Entrar no encontro", "entrar", null, {}, "primary")}${button("Voltar ao mapa", "voltar")}</div>`;
   } else if (phase === "recompensa")
-    html += `<h3>Escolha o que levar adiante.</h3><p>Uma relíquia para acompanhar sua jornada. Bônus de lucro somam até o limite de ×3.</p><div class="choice-grid">${s.offers.map((k) => choiceCard(k, s.catalog.relics[k], "reliquia")).join("")}</div>`;
+    html += `<h3>Escolha sua relíquia</h3><p>Uma relíquia para acompanhar sua jornada. Bônus de lucro somam até o limite de ×3.</p><div class="choice-grid">${s.offers.map((k) => choiceCard(k, s.catalog.relics[k], "reliquia")).join("")}</div>`;
   else if (phase === "loja") {
     const sh = s.shop;
-    html += `<h3>O preço de uma boa vantagem.</h3><p>${sh.bought.length}/2 compras · ${sh.services}/1 serviço usado. Saldo: ${fmt.format(p.fichas)} fichas.</p><div class="choice-grid shop-grid">${sh.offers
+    html += `<h3>Empório</h3><p>${sh.bought.length}/2 compras · ${sh.services}/1 serviço usado. Saldo: ${fmt.format(p.fichas)} fichas.</p><div class="choice-grid shop-grid">${sh.offers
       .map((k) => {
         const i = s.catalog.relics[k],
           price = sh.prices[k],
           done = sh.bought.includes(k);
-        return `<article class="choice-card ${i.raridade}"><span class="rarity ${i.raridade}">${i.raridade}</span><h3>${esc(i.nome)}</h3><p>${esc(i.descricao)}</p><strong class="price">${price} fichas</strong>${combo(k) ? `<p class="synergy">${esc(combo(k))}</p>` : ""}${button(done ? "Adquirida" : "Comprar", "comprar", k, {}, "primary", done || sh.bought.length >= 2 || p.fichas < price)}${sh.credit ? button(`A prazo: ${fmt.format(price / 2)} agora`, "comprar", k, { credito: true }, "quiet", done || sh.bought.length >= 2 || p.fichas < price / 2) : ""}</article>`;
+        return `<article class="choice-card ${i.raridade}"><span class="rarity ${i.raridade}">${rarityLabels[i.raridade]}</span><span class="choice-emblem">${sigil(k)}</span><h3>${esc(i.nome)}</h3><p>${esc(i.descricao)}</p><strong class="price">${price} fichas</strong>${combo(k) ? `<p class="synergy">${esc(combo(k))}</p>` : ""}${button(done ? "Adquirida" : "Comprar", "comprar", k, {}, "primary", done || sh.bought.length >= 2 || p.fichas < price)}${sh.credit ? button(`A prazo: ${fmt.format(price / 2)} agora`, "comprar", k, { credito: true }, "quiet", done || sh.bought.length >= 2 || p.fichas < price / 2) : ""}</article>`;
       })
       .join(
         "",
@@ -329,7 +378,7 @@ function renderAdventure() {
     html += `<h3>${phase === "evento" ? title : phase === "refugio" ? "A estrada pode esperar." : "Quem você pretende se tornar?"}</h3><div class="story-choices">${s.options.map((o) => `<article class="story-choice"><div><h4>${esc(o.nome)}</h4><p>${esc(o.descricao)}</p></div>${button("Escolher", "escolha", o.id, {}, "primary")}</article>`).join("")}</div>`;
   } else if (phase === "conclusao") {
     const r = s.result;
-    html += `<div class="encounter-emblem">${r.won ? "♛" : "◇"}</div><h3>${r.won ? "A vitória tem seu nome." : "A estrada cobrou seu preço."}</h3><p>${esc(r.name)} · ${r.won ? "Recompensas recebidas." : "Sem recompensa de vitória; prestígio reduzido."}</p>${r.boss && !r.won ? `<p>${r.retry ? `Uma revanche está disponível por ${r.cost} fichas.` : "Sua revanche já foi usada."} Encerrar o desafio termina a jornada.</p>` : ""}<div class="actions">${r.retry ? button(`Revanche · ${r.cost} fichas`, "revanche", null, {}, "primary", p.fichas < r.cost) : ""}${button(r.boss && !r.won ? "Encerrar jornada" : r.boss ? "Próxima região" : "Voltar ao mapa", "seguir", null, {}, "primary")}</div>`;
+    html += `<div class="encounter-emblem">${r.won ? "♛" : "◇"}</div><h3>${r.won ? "Vitória" : "Derrota"}</h3><p>${esc(r.name)} · ${r.won ? "Recompensas recebidas." : "Sem recompensa de vitória; prestígio reduzido."}</p>${r.boss && !r.won ? `<p>${r.retry ? `Uma revanche está disponível por ${r.cost} fichas.` : "Sua revanche já foi usada."} Encerrar o desafio termina a jornada.</p>` : ""}<div class="actions">${r.retry ? button(`Revanche · ${r.cost} fichas`, "revanche", null, {}, "primary", p.fichas < r.cost) : ""}${button(r.boss && !r.won ? "Encerrar jornada" : r.boss ? "Próxima região" : "Voltar ao mapa", "seguir", null, {}, "primary")}</div>`;
   } else if (phase === "fim")
     html += `<div class="encounter-emblem">${s.victory ? "♛" : "◇"}</div><h3>${s.victory ? "O reino pronuncia seu nome." : "Toda lenda deixa uma marca."}</h3><p>${esc(s.epilogue)}</p><p>${fmt.format(p.fichas)} fichas · ${p.prestigio} de prestígio · ${s.round_count} rodadas</p><button class="primary" id="new-legend">Começar outra lenda</button><details><summary>Salão das Lendas</summary>${s.legends.map((l) => `<p>${esc(l.nome)} · ${l.vitoria ? "Coroado" : "Caído"} · região ${l.regiao} · ${l.prestigio} prestígio</p>`).join("")}</details>`;
   else if (phase === "contrato")
@@ -565,10 +614,10 @@ function render() {
     p.itens
       .map(
         (k) =>
-          `<button class="relic ${state.catalog.relics[k].raridade}" data-inventory title="${esc(state.catalog.relics[k].descricao)}">◇ ${esc(state.catalog.relics[k].nome)}<small>${state.catalog.relics[k].raridade}</small></button>`,
+          `<button class="relic ${state.catalog.relics[k].raridade}" data-inventory title="${esc(state.catalog.relics[k].descricao)}">${sigil(k)} ${esc(state.catalog.relics[k].nome)}<small>${rarityLabels[state.catalog.relics[k].raridade]}</small></button>`,
       )
       .join("") ||
-    '<div class="relic-empty"><svg><use href="#diamond"/></svg><p>Um destino por descobrir</p><small>Encontros vencidos concedem relíquias.</small></div>';
+    '<div class="relic-empty"><svg><use href="#diamond"/></svg><p>Nenhuma relíquia</p><small>Encontros vencidos concedem relíquias.</small></div>';
   $("oaths-summary").innerHTML =
     `<div class="section-label">SEUS JURAMENTOS</div>${p.juramentos.map((k) => `<button class="oath-summary" data-inventory title="${esc(state.catalog.oaths[k].descricao)}">${esc(state.catalog.oaths[k].nome)}${p.consagrado === k ? " · consagrado" : ""}</button>`).join("")}`;
   $("global-notice").hidden = !state.notice;
@@ -584,6 +633,8 @@ function render() {
 }
 async function act(acao, valor = null, extra = {}) {
   if (busy || !state) return;
+  let acquired = null;
+  const previousItems = new Set(state.player?.itens || []);
   busy = true;
   $("global-error").hidden = true;
   $("welcome-error").hidden = true;
@@ -602,6 +653,7 @@ async function act(acao, valor = null, extra = {}) {
     if (!response.ok)
       throw new Error(data.erro || "Não foi possível concluir a ação.");
     state = data;
+    acquired = state.player?.itens.find((k) => !previousItems.has(k)) || null;
   } catch (e) {
     const el = $("welcome").open ? $("welcome-error") : $("global-error");
     el.textContent =
@@ -617,8 +669,10 @@ async function act(acao, valor = null, extra = {}) {
     busy = false;
     disabled.forEach(([b, d]) => (b.disabled = d));
     render();
+    if (acquired) celebrate(acquired);
   }
 }
+$("loot-close").addEventListener("click", () => $("loot-dialog").close());
 document.addEventListener("click", (e) => {
   const b = e.target.closest("[data-command]");
   if (b && !b.disabled) {
@@ -701,3 +755,21 @@ setInterval(async () => {
     assetVersion = v;
   } catch (_) {}
 }, 5000);
+
+const fullscreenButton = $("fullscreen-button");
+fullscreenButton.hidden = !document.fullscreenEnabled;
+fullscreenButton.addEventListener("click", async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (_) {
+    $("global-error").textContent =
+      "O navegador não permitiu abrir a tela cheia.";
+    $("global-error").hidden = false;
+  }
+});
+document.addEventListener("fullscreenchange", () => {
+  const active = Boolean(document.fullscreenElement);
+  fullscreenButton.textContent = active ? "Sair da tela cheia" : "Tela cheia";
+  fullscreenButton.setAttribute("aria-pressed", String(active));
+});

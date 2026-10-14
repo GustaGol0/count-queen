@@ -1,5 +1,16 @@
 # Notas de atualização
 
+## 0.5.1 — Selos e Pergaminhos — 14/10/2026
+
+- Interface pixelada com fonte local, contornos em blocos e mesa verde; menos frases decorativas e informações repetidas.
+- 24 símbolos próprios para as relíquias, exibidos nas recompensas, na loja e no inventário.
+- Juramentos apresentados como contratos em pergaminho com selo de cera e ação de assinar.
+- Revelação ao adquirir relíquias: comum discreta, incomum com pequenas partículas, rara com maior destaque e mítica com uma entrada central mais elaborada. A escolha já está salva antes da animação; é possível fechar imediatamente ou usar Esc.
+- Animações curtas de distribuição de cartas, seleção e caminhos percorridos. Respeito à preferência do sistema por movimento reduzido.
+- Botão de tela cheia nos navegadores compatíveis, sincronizado ao sair com Esc.
+- Raridades continuam sendo das relíquias; cartas do baralho mantêm seus valores, naipes e marcas.
+- Verificação: 93 testes automatizados e fluxo no Chromium cobrindo telas da campanha, aquisição das quatro raridades, recarga do save, loja, contratos, tela cheia e larguras de celular/tablet/desktop.
+
 ## 0.5.0 — A Estrada da Coroa — 14/10/2026
 
 A campanha visual agora é uma jornada de blackjack por quatro regiões: escolha

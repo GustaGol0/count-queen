@@ -47,6 +47,9 @@
         >BLACKJACK ROGUELITE <span>·</span> A ESTRADA DA COROA</span
       >
       <nav aria-label="Menu">
+        <button class="quiet" id="fullscreen-button" aria-pressed="false">
+          Tela cheia
+        </button>
         <button class="quiet" id="deck-button">Baralho</button>
         <button class="quiet" id="help-button">
           Como jogar <span class="key">?</span></button
@@ -233,7 +236,7 @@
         </section>
         <footer class="game-footer">
           <span>♠ &nbsp; ♥ &nbsp; ♣ &nbsp; ♦</span
-          ><span>Uma boa mão muda a rodada. Uma escolha muda o reino.</span
+          ><span>BLACKJACK · 4 REGIÕES · 1 COROA</span
           ><button class="quiet" id="history-button">Histórico ↗</button>
         </footer>
       </section>
@@ -248,11 +251,6 @@
           ><span class="live-dot"></span>
         </div>
         <div id="history" class="history"></div>
-        <blockquote>
-          “Uma coroa não se herda.<br />Conquista-se, carta a carta.”<cite
-            >— SUSSURROS DA CORTE</cite
-          >
-        </blockquote>
       </aside>
     </main>
     <dialog id="welcome" class="welcome-dialog">
@@ -260,7 +258,7 @@
         <svg><use href="#crown" /></svg>
       </div>
       <div class="eyebrow">O PRIMEIRO PASSO ATÉ O TRONO</div>
-      <h2>Toda coroa tem<br />uma história.</h2>
+      <h2>Count & Queen</h2>
       <p>
         A sua começa com 200 fichas, um baralho e quatro regiões pela frente.
         Como o reino vai chamar você?
@@ -271,7 +269,7 @@
           id="name"
           name="name"
           maxlength="30"
-          placeholder="Nome da sua lenda"
+          placeholder="Seu nome"
           autocomplete="nickname"
           required
         /><label for="gender">SEUS TÍTULOS</label
@@ -279,7 +277,7 @@
           <option value="h">Plebeu → Rei</option>
           <option value="m">Plebeia → Rainha</option></select
         ><button class="primary" type="submit">
-          Tomar meu lugar à mesa <span>↗</span>
+          Começar jornada <span>↗</span>
         </button>
         <p id="welcome-error" class="error" role="alert" hidden></p>
       </form>
@@ -290,6 +288,10 @@
         ×
       </button>
       <div id="info-content"></div>
+    </dialog>
+    <dialog id="loot-dialog" aria-labelledby="loot-content" class="loot-dialog">
+      <div id="loot-content"></div>
+      <button class="primary" id="loot-close" autofocus>Continuar</button>
     </dialog>
   </body>
 </html>

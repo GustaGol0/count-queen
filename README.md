@@ -181,3 +181,7 @@ O GitHub Actions executa os testes em Python 3.10, 3.12 e 3.13.
 | `count_queen/web.py` | Servidor local e API; adaptador de saves da mesa antiga mantido para regressões. |
 | `count_queen/web_ui/` | Interface da campanha. |
 | `count_queen/game.py` | Campanha anterior de terminal. |
+
+### Visual pixelado e animações
+
+A versão 0.5.1 traz símbolos próprios para as 24 relíquias, juramentos em contratos de pergaminho e revelações por raridade. Use **Tela cheia** no topo e **Esc** para sair. As animações respeitam a preferência de movimento reduzido do sistema. A fonte Pixelify Sans é distribuída localmente sob a licença em `FONT-LICENSE.txt`; não é necessário carregar fontes externas.

@@ -34,6 +34,8 @@ def main():
                 page.goto(url);page.fill('#name','Áurea');page.select_option('#gender','m');page.locator('#new-game-form button').click()
                 expect(page.locator('#welcome')).not_to_be_visible()
                 expect(page.locator('.choice-card')).to_have_count(3)
+                expect(page.locator('.oath-contract')).to_have_count(3)
+                page.screenshot(path=str(artifacts/'juramentos.png'),full_page=True)
                 page.locator('.choice-card button').first.click()
                 expect(page.locator('.map-board')).to_be_visible()
                 page.screenshot(path=str(artifacts/'mapa.png'),full_page=True)
@@ -67,12 +69,37 @@ def main():
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),f'Overflow: {label}'
                     if label in ('combate','destino','recompensa'):page.screenshot(path=str(artifacts/f'{label}-390.png'),full_page=True)
                     page.set_viewport_size({'width':1440,'height':1000})
+                # Aquisição real: quatro raridades, fechamento e sem repetir ao recarregar.
+                from count_queen.content import RELICS
+                assert set(page.evaluate('Object.keys(sigils)')) == set(RELICS)
+                for rarity in ['comum','incomum','raro','mitico']:
+                    g=sample();g.start_battle('boss','ferrugem');g.end_encounter(True)
+                    key=next(k for k,v in RELICS.items() if v['raridade']==rarity and k not in g.p['itens'])
+                    g.s['offers']=[key]
+                    with mesa.lock:mesa.game.restore(g.export())
+                    page.goto(url);page.emulate_media(reduced_motion='no-preference')
+                    page.get_by_role('button',name='Escolher',exact=True).click()
+                    expect(page.locator('#loot-dialog')).to_be_visible()
+                    assert rarity in page.locator('#loot-dialog').get_attribute('class')
+                    assert key in page.request.get(url+'/api/estado').json()['player']['itens']
+                    page.locator('#loot-dialog .loot-art').evaluate('(el) => Promise.all(el.getAnimations().map(a => a.finished))')
+                    page.screenshot(path=str(artifacts/f'loot-{rarity}.png'))
+                    page.keyboard.press('Escape');expect(page.locator('#loot-dialog')).not_to_be_visible()
+                    page.reload();expect(page.locator('#loot-dialog')).not_to_be_visible()
+                page.emulate_media(reduced_motion='reduce')
+                if page.evaluate('document.fullscreenEnabled'):
+                    page.locator('#fullscreen-button').click()
+                    expect(page.locator('#fullscreen-button')).to_have_attribute('aria-pressed','true')
+                    page.locator('#fullscreen-button').click()
+                    expect(page.locator('#fullscreen-button')).to_have_attribute('aria-pressed','false')
                 # Serviço real de oficina, loja e inspeção do baralho.
                 with mesa.lock:mesa.game.restore(cases['oficina'])
                 page.goto(url);page.locator('#workshop-form').wait_for();page.select_option('#work-kind','transformar');page.select_option('#work-rank','7');page.get_by_role('button',name='Confirmar alteração').click();expect(page.locator('.map-board')).to_be_visible()
                 with mesa.lock:mesa.game.restore(cases['loja'])
                 page.goto(url);page.locator('.shop-grid .primary').first.click()
                 expect(page.get_by_role('button',name='Adquirida',exact=True)).to_be_visible()
+                expect(page.locator('#loot-dialog')).to_be_visible()
+                page.locator('#loot-close').click()
                 page.locator('#deck-button').click();expect(page.locator('.deck-grid')).to_be_visible();page.get_by_role('button',name='Fechar janela').click()
                 page.locator('#inventory-button').click();expect(page.get_by_role('heading',name='Relíquias & juramentos')).to_be_visible();page.get_by_role('button',name='Fechar janela').click()
                 with mesa.lock:mesa.game.restore(cases['destino'])

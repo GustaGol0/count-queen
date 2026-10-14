@@ -188,6 +188,8 @@ def criar_servidor(mesa, host='127.0.0.1', port=8000):
                 for arquivo in sorted(STATIC.iterdir()):
                     digest.update(arquivo.read_bytes())
                 self.responder(200, {'versao': digest.hexdigest()})
+            elif caminho == '/pixel.ttf':
+                self.responder(200, (STATIC / 'pixel.ttf').read_bytes(), 'font/ttf')
             elif caminho in ('/', '/app.js', '/style.css'):
                 nome, tipo = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
                               '/style.css': ('style.css', 'text/css')}[caminho]
