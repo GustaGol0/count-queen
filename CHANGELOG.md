@@ -2,6 +2,9 @@
 
 ## Em desenvolvimento — Mesa Viva — 15/10/2026
 
+- Números das cartas, fichas, apostas e placares em fonte limpa; valores grandes também no centro das cartas. Títulos e símbolos mantêm a identidade retrô, com bordas mais suaves.
+- Distribuição e compras deslizam da pilha até a mão. Carta oculta vira na revelação; cartas são recolhidas ao continuar; saldo, aposta e resultado recebem movimentos curtos.
+- Animações acompanham apenas ações confirmadas, não repetem ao recarregar e podem ser interrompidas pelo próximo comando. Movimento reduzido desativa os efeitos e limpa animações em andamento.
 - Mesa de combate ocupa a área central, com cartas maiores, aposta sobre o feltro e ações junto à mão do jogador.
 - Fichas e prestígio no topo; nome, relíquias equipadas e atalhos no rodapé. As antigas colunas laterais foram removidas.
 - Baralho, histórico, jornada e catálogo abrem sob demanda. Cada símbolo equipado abre o efeito daquela relíquia.
@@ -11,6 +14,7 @@
 - Transições curtas entre telas; ações especiais de relíquias aparecem quando disponíveis.
 - Combate comum cabe em notebook de 1366 × 768; mãos longas e até quatro mãos divididas se reorganizam sem cortar cartas.
 - Validação: 93 testes de regras/persistência; verificação no Chromium de 16 estados, navegação pelos menus, bloqueio de atalhos em janelas, rodada completa e recarga do save. Aquisições nas quatro raridades e tela cheia também verificadas.
+- Verificação adicional de movimento: distribuição inicial, compra sem repetir cartas antigas, virada, recolhimento, resultado, recarga, comandos durante animações e mudança para movimento reduzido.
 
 ## 0.5.1 — Selos e Pergaminhos — 14/10/2026
 

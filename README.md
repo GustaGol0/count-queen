@@ -8,6 +8,10 @@ sete bosses — até o Rei Sem Rosto, que responde à história da sua jornada.
 menus sob demanda e mapa horizontal no computador. Leia os [patchnotes](CHANGELOG.md)
 e o [catálogo de relíquias, juramentos e bosses](CATALOGO.md).
 
+Valores das cartas e recursos usam números nítidos. Distribuição, compra,
+revelação e recolhimento têm animações suaves, respeitando a preferência por
+movimento reduzido do sistema. Os comandos continuam disponíveis durante os efeitos.
+
 ## Jogar
 
 Requer **Python 3.10 ou superior** e um navegador moderno. A campanha visual usa

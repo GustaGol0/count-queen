@@ -17,8 +17,9 @@
   --wine: #813745;
   --rarity: #aaa994;
   font:
-    16px/1.45 Pixel,
-    monospace;
+    15px/1.45 "Trebuchet MS",
+    Arial,
+    sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -61,12 +62,12 @@ input,
 select {
   font: inherit;
   color: inherit;
-  border-radius: 0;
+  border-radius: 5px;
 }
 button {
   cursor: pointer;
   transition:
-    transform 100ms steps(3),
+    transform 160ms ease-out,
     background 100ms;
 }
 button:disabled {
@@ -528,16 +529,17 @@ summary {
   height: 140px;
   background: var(--paper);
   border: 3px solid #b09a70;
-  box-shadow: 5px 6px #092417b3;
+  border-radius: 7px;
+  box-shadow: 2px 5px 8px #09241780;
+  font-family: Arial, sans-serif;
   color: #26382d;
-  animation: pixel-deal 260ms steps(6) both;
-  animation-delay: calc(var(--i, 0) * 45ms);
 }
 .card::after {
   content: "";
   position: absolute;
   inset: 5px;
   border: 1px solid #c1b087;
+  border-radius: 3px;
   pointer-events: none;
 }
 .card.red {
@@ -551,6 +553,7 @@ summary {
   flex-direction: column;
   align-items: center;
   font-size: 24px;
+  font-weight: 700;
   line-height: 1;
   z-index: 1;
 }
@@ -571,18 +574,7 @@ summary {
   place-items: center;
   font-size: 50px;
 }
-.card-suit.face {
-  font-size: 37px;
-}
-.card-suit.face::before {
-  content: "♛";
-  position: absolute;
-  top: 28px;
-  font-size: 26px;
-}
-.card-suit.face span {
-  margin-top: 30px;
-}
+
 .card.back,
 .deck-back {
   background: repeating-conic-gradient(#713143 0% 25%, #512232 0% 50%) 0 0/12px
@@ -651,10 +643,7 @@ summary {
 .player-area.split .card-suit {
   font-size: 35px;
 }
-.player-area.split .card-suit.face::before {
-  top: 17px;
-  font-size: 21px;
-}
+
 .cards.many {
   gap: 0;
   padding-left: 26px;
@@ -866,7 +855,7 @@ summary {
   border: 3px solid var(--rarity);
   background: #20372f;
   box-shadow: 7px 8px #061b14;
-  transition: transform 120ms steps(3);
+  transition: transform 180ms ease-out;
   min-width: 0;
 }
 .choice-card:hover {
@@ -1318,10 +1307,7 @@ dialog h2 {
 .deck-grid .card-suit {
   font-size: 32px;
 }
-.deck-grid .card-suit.face::before {
-  top: 18px;
-  font-size: 19px;
-}
+
 .history-entry {
   padding: 16px 0;
   border-bottom: 1px solid var(--line);
@@ -1434,16 +1420,7 @@ dialog h2 {
   .table .card-suit {
     font-size: 37px;
   }
-  .table .card-suit.face {
-    font-size: 29px;
-  }
-  .table .card-suit.face::before {
-    top: 20px;
-    font-size: 20px;
-  }
-  .table .card-suit.face span {
-    margin-top: 23px;
-  }
+
   .dealer-id {
     margin-bottom: 7px;
   }
@@ -1688,16 +1665,7 @@ dialog h2 {
   .card-suit {
     font-size: 38px;
   }
-  .card-suit.face {
-    font-size: 30px;
-  }
-  .card-suit.face::before {
-    top: 22px;
-    font-size: 20px;
-  }
-  .card-suit.face span {
-    margin-top: 24px;
-  }
+
   .hand-score {
     font-size: 15px;
   }
@@ -1720,10 +1688,7 @@ dialog h2 {
   .player-area.split .card-suit {
     font-size: 29px;
   }
-  .player-area.split .card-suit.face::before {
-    top: 13px;
-    font-size: 18px;
-  }
+
   .bet-form {
     gap: 14px 8px;
   }
@@ -1926,19 +1891,19 @@ dialog h2 {
   position: relative;
 }
 .loot-dialog[open] .loot-art {
-  animation: loot-pop 200ms steps(4) both;
+  animation: loot-pop 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .loot-dialog.incomum[open] .loot-art {
   animation-duration: 350ms;
 }
 .loot-dialog.raro[open] .loot-art {
-  animation: loot-pop 550ms steps(7) both;
+  animation: loot-pop 550ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   box-shadow:
     6px 6px #071912,
     0 0 0 8px #c6ade822;
 }
 .loot-dialog.mitico[open] .loot-art {
-  animation: mythic-reveal 850ms steps(10) both;
+  animation: mythic-reveal 850ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   background: #593a29;
   box-shadow:
     6px 6px #071912,
@@ -1957,7 +1922,7 @@ dialog h2 {
   height: 6px;
   background: var(--rarity);
   --angle: calc(var(--n) * 37deg);
-  animation: spark 650ms steps(8) both;
+  animation: spark 750ms ease-out both;
 }
 .loot-dialog.comum .loot-rays {
   display: none;
@@ -1967,16 +1932,7 @@ dialog h2 {
   height: 8px;
   animation-duration: 1200ms;
 }
-@keyframes pixel-deal {
-  from {
-    opacity: 0;
-    transform: translate(32px, -28px) rotate(8deg);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+
 @keyframes loot-pop {
   from {
     opacity: 0;
@@ -2016,5 +1972,162 @@ dialog h2 {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Clear ranks and smooth feedback, with pixel art reserved for identity. */
+.brand,
+.table-heading h2,
+.adventure-panel > h3,
+.welcome-dialog h2,
+.map-intro h3 {
+  font-family: Pixel, monospace;
+}
+.resource-hud strong,
+.round-counter strong,
+.hand-score,
+.bet-on-table,
+.chips,
+.bet-input input,
+.price,
+.battle-score,
+.table-deck strong,
+.dock-button small {
+  font-family: Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.resource-hud > div {
+  position: relative;
+}
+.resource-hud strong {
+  display: inline-block;
+  font-weight: 800;
+}
+.resource-change {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 8px;
+  white-space: nowrap;
+  font:
+    700 16px Arial,
+    sans-serif;
+  pointer-events: none;
+  z-index: 10;
+}
+.hud-prestige .resource-change {
+  left: auto;
+  right: 0;
+  top: 100%;
+}
+.hand-score {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.card-suit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding-top: 6px;
+  line-height: 1;
+}
+.card-value {
+  font:
+    800 42px/1 Arial,
+    sans-serif;
+  letter-spacing: -2px;
+}
+.card-center-suit {
+  font:
+    23px/1 Arial,
+    sans-serif;
+}
+.card-corner {
+  letter-spacing: -1px;
+}
+.card-corner small {
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.card-corner.bottom {
+  opacity: 0.8;
+}
+.player-area.split .card-value,
+.deck-grid .card-value {
+  font-size: 32px;
+}
+.player-area.split .card-center-suit,
+.deck-grid .card-center-suit {
+  font-size: 17px;
+}
+.motion-card {
+  position: fixed;
+  margin: 0 !important;
+  pointer-events: none;
+  z-index: 20;
+}
+.primary,
+.action-button,
+.dock-button {
+  border-radius: 5px;
+}
+.choice-card {
+  border-radius: 6px;
+}
+.choice-card.oath-contract {
+  border-radius: 2px;
+}
+.table {
+  border-radius: 12px;
+}
+.table-inlay {
+  border-radius: 7px;
+}
+.relic {
+  border-radius: 4px;
+}
+.dealer-id h3 {
+  font-family: Pixel, monospace;
+}
+@media (min-width: 701px) and (max-height: 849px) {
+  .table .card-value {
+    font-size: 34px;
+  }
+  .table .card-center-suit {
+    font-size: 18px;
+  }
+  .hand-score {
+    font-size: 15px;
+  }
+}
+@media (max-width: 700px) {
+  .card-value {
+    font-size: 34px;
+  }
+  .card-center-suit {
+    font-size: 18px;
+  }
+  .player-area.split .card-value,
+  .deck-grid .card-value {
+    font-size: 27px;
+  }
+  .player-area.split .card-center-suit,
+  .deck-grid .card-center-suit {
+    font-size: 14px;
+  }
+  .hand-score {
+    font-size: 15px;
+  }
+  .resource-change {
+    font-size: 12px;
+    left: auto;
+    right: 0;
+    top: 100%;
+  }
+  .resource-hud {
+    padding-bottom: 3px;
   }
 }

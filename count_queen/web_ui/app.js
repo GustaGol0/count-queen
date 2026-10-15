@@ -68,6 +68,258 @@ let state,
   busy = false,
   lastPhase = "",
   assetVersion;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const liveAnimations = new Set();
+const motionLayers = new Set();
+
+function stopMotion() {
+  liveAnimations.forEach((animation) => animation.cancel());
+  liveAnimations.clear();
+  motionLayers.forEach((layer) => layer.remove());
+  motionLayers.clear();
+}
+reducedMotion.addEventListener("change", () => {
+  if (reducedMotion.matches) stopMotion();
+});
+function tween(node, frames, options = {}, cleanup = () => {}) {
+  if (reducedMotion.matches || !node?.isConnected) {
+    cleanup();
+    return;
+  }
+  const animation = node.animate(frames, {
+    duration: 360,
+    easing: "cubic-bezier(.2,.8,.2,1)",
+    ...options,
+  });
+  liveAnimations.add(animation);
+  const done = () => {
+    liveAnimations.delete(animation);
+    cleanup();
+  };
+  animation.finished.then(done, done);
+  return animation;
+}
+function captureCards() {
+  return [...document.querySelectorAll("#table .card")].map((node) => ({
+    key: node.dataset.key,
+    rect: node.getBoundingClientRect(),
+    hidden: node.classList.contains("back"),
+    ghost: node.classList.contains("ghost"),
+    node,
+  }));
+}
+function playTableMotion(previous, snapshots) {
+  if (reducedMotion.matches) return;
+  const freshRound = previous?.phase === "aposta" && state.battle?.hands.length;
+  const deck = document.querySelector(".deck-back").getBoundingClientRect();
+  const table = $("table").getBoundingClientRect();
+  let sequence = 0,
+    finishAt = 0;
+  if (previous?.phase === "resultado" && !state.battle?.hands.length) {
+    snapshots
+      .filter((entry) => !entry.ghost && entry.rect.width)
+      .forEach((entry, i) => {
+        const card = entry.node.cloneNode(true);
+        card.classList.add("motion-card");
+        card.setAttribute("aria-hidden", "true");
+        Object.assign(card.style, {
+          left: entry.rect.x + "px",
+          top: entry.rect.y + "px",
+          width: entry.rect.width + "px",
+          height: entry.rect.height + "px",
+        });
+        document.body.append(card);
+        motionLayers.add(card);
+        tween(
+          card,
+          [
+            { opacity: 1, transform: "none" },
+            {
+              opacity: 0,
+              transform: `translate(${table.right - entry.rect.x}px,-40px) rotate(20deg) scale(.6)`,
+            },
+          ],
+          { duration: 300, delay: i * 35, fill: "backwards" },
+          () => {
+            card.remove();
+            motionLayers.delete(card);
+          },
+        );
+      });
+  }
+  for (const node of document.querySelectorAll("#table .card:not(.ghost)")) {
+    const target = node.getBoundingClientRect();
+    if (!target.width) continue;
+    const index = freshRound
+      ? -1
+      : snapshots.findIndex(
+          (old) => old.key === node.dataset.key && !old.ghost,
+        );
+    const old = index >= 0 ? snapshots.splice(index, 1)[0] : null;
+    if (old?.rect.width) {
+      const dx = old.rect.x - target.x,
+        dy = old.rect.y - target.y;
+      if (Math.abs(dx) + Math.abs(dy) > 2)
+        tween(node, [
+          { transform: `translate(${dx}px,${dy}px)` },
+          { transform: "none" },
+        ]);
+      continue;
+    }
+    // Reveal only a card that was hidden in the previous server response.
+    const back =
+      !freshRound && node.parentElement.id === "dealer-cards"
+        ? snapshots.find((entry) => entry.hidden)
+        : null;
+    if (back && !node.classList.contains("back")) {
+      snapshots.splice(snapshots.indexOf(back), 1);
+      const cover = back.node.cloneNode(true);
+      cover.classList.add("motion-card");
+      cover.setAttribute("aria-hidden", "true");
+      Object.assign(cover.style, {
+        left: target.x + "px",
+        top: target.y + "px",
+        width: target.width + "px",
+        height: target.height + "px",
+      });
+      document.body.append(cover);
+      motionLayers.add(cover);
+      tween(
+        cover,
+        [
+          { transform: "perspective(700px) rotateY(0deg)" },
+          { transform: "perspective(700px) rotateY(90deg)" },
+        ],
+        { duration: 180, easing: "ease-in" },
+        () => {
+          cover.remove();
+          motionLayers.delete(cover);
+        },
+      );
+      tween(
+        node,
+        [
+          { transform: "perspective(700px) rotateY(-90deg)" },
+          { transform: "perspective(700px) rotateY(0deg)" },
+        ],
+        { duration: 220, delay: 180, fill: "backwards", easing: "ease-out" },
+      );
+      finishAt = Math.max(finishAt, 400);
+    } else {
+      const dx = (deck.width ? deck.x : table.right - 45) - target.x;
+      const dy = (deck.width ? deck.y : table.top + 30) - target.y;
+      const delay = sequence++ * 90;
+      tween(
+        node,
+        [
+          {
+            opacity: 0,
+            transform: `translate(${dx}px,${dy}px) rotate(12deg) scale(.65)`,
+          },
+          {
+            opacity: 1,
+            transform: "translate(0,0) rotate(-2deg) scale(1.03)",
+            offset: 0.82,
+          },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 440, delay, fill: "backwards" },
+      );
+      finishAt = Math.max(finishAt, delay + 440);
+    }
+  }
+  if (sequence)
+    tween(
+      $("table-deck-button"),
+      [
+        { filter: "brightness(1)" },
+        { filter: "brightness(1.5)", offset: 0.4 },
+        { filter: "brightness(1)" },
+      ],
+      { duration: 400 },
+    );
+  if (state.phase === "resultado" && previous?.phase !== "resultado") {
+    tween(
+      $("result"),
+      [
+        { opacity: 0, transform: "translateY(16px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 340, delay: finishAt, fill: "backwards" },
+    );
+    tween(
+      $("player-hands"),
+      [
+        { filter: "brightness(1)" },
+        {
+          filter:
+            state.battle.result.score > 0
+              ? "brightness(1.3)"
+              : "brightness(.8)",
+          offset: 0.5,
+        },
+        { filter: "brightness(1)" },
+      ],
+      { duration: 500, delay: finishAt },
+    );
+  }
+  const oldBet = previous?.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
+  const newBet = state.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
+  if (newBet > oldBet && !$("table-bet").hidden)
+    tween(
+      $("table-bet"),
+      [
+        { opacity: 0, transform: "translateY(55px) scale(.7)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 450 },
+    );
+}
+function resourceMotion(previous) {
+  if (!previous?.player || !state.player) return;
+  for (const [id, key] of [
+    ["balance", "fichas"],
+    ["prestige", "prestigio"],
+  ]) {
+    const delta = state.player[key] - previous.player[key];
+    if (!delta) continue;
+    const node = $(id);
+    tween(
+      node,
+      [
+        { transform: "scale(1)" },
+        {
+          transform: "scale(1.13)",
+          color: delta > 0 ? "#cceca1" : "#ffb6a1",
+          offset: 0.35,
+        },
+        { transform: "scale(1)" },
+      ],
+      { duration: 500 },
+    );
+    if (reducedMotion.matches) continue;
+    const label = document.createElement("span");
+    label.className = `resource-change ${delta > 0 ? "positive" : "negative"}`;
+    label.textContent = signed(delta);
+    label.setAttribute("aria-hidden", "true");
+    node.parentElement.append(label);
+    motionLayers.add(label);
+    tween(
+      label,
+      [
+        { opacity: 0, transform: "translateY(8px)" },
+        { opacity: 1, transform: "translateY(0)", offset: 0.2 },
+        { opacity: 1, offset: 0.65 },
+        { opacity: 0, transform: "translateY(-18px)" },
+      ],
+      { duration: 1100 },
+      () => {
+        label.remove();
+        motionLayers.delete(label);
+      },
+    );
+  }
+}
 const sigils = {
   manilha_sorte: "M4 5h8v6H4z M2 7h2v2H2z M12 7h2v2h-2z",
   moeda_peregrino: "M5 2h6v2h2v8h-2v2H5v-2H3V4h2z M7 5v6h2V5z",
@@ -135,12 +387,11 @@ function cardHTML(c, i = 0) {
     return '<div class="card back" role="img" aria-label="Carta oculta"><svg><use href="#crown"/></svg></div>';
   if (c.ghost)
     return '<div class="card ghost" aria-hidden="true"><svg><use href="#crown"/></svg></div>';
-  const red = ["Copas", "Ouros"].includes(c.naipe),
-    face = ["J", "Q", "K"].includes(c.valor);
+  const red = ["Copas", "Ouros"].includes(c.naipe);
   const value = c.temporaria === "coroa" ? (c.pontos ?? 0) : c.valor;
   const label = `${value} de ${c.naipe}${c.marca ? " · " + c.marca : ""}${c.temporaria ? " · " + c.temporaria : ""}${c.pontos !== undefined ? " · vale " + c.pontos : ""}`;
   const corner = `<span>${esc(value)}</span><small>${suits[c.naipe] || "◇"}</small>`;
-  return `<div class="card ${red ? "red" : ""} ${c.marca ? "marked" : ""}" style="--i:${i}" role="img" aria-label="${esc(label)}" title="${esc(label)}"><span class="card-corner">${corner}</span><span class="card-suit ${face ? "face" : ""}"><span>${face ? esc(value) : suits[c.naipe] || "◇"}</span></span><span class="card-corner bottom">${corner}</span>${c.marca ? `<span class="mark-tag">${esc(c.marca)}</span>` : ""}</div>`;
+  return `<div class="card ${red ? "red" : ""} ${c.marca ? "marked" : ""}" role="img" aria-label="${esc(label)}" title="${esc(label)}"><span class="card-corner">${corner}</span><span class="card-suit"><strong class="card-value">${esc(value)}</strong><small class="card-center-suit">${suits[c.naipe] || "◇"}</small></span><span class="card-corner bottom">${corner}</span>${c.marca ? `<span class="mark-tag">${esc(c.marca)}</span>` : ""}</div>`;
 }
 function cards(el, list) {
   const signature = JSON.stringify(list);
@@ -422,12 +673,13 @@ function renderAdventure() {
     lastPhase !== phase &&
     !matchMedia("(prefers-reduced-motion: reduce)").matches
   ) {
-    $("adventure-panel").animate(
+    tween(
+      $("adventure-panel"),
       [
         { opacity: 0, transform: "translateY(10px)" },
         { opacity: 1, transform: "none" },
       ],
-      { duration: 220, easing: "steps(5)" },
+      { duration: 280 },
     );
   }
   $("new-legend")?.addEventListener("click", () => $("welcome").showModal());
@@ -604,8 +856,10 @@ function renderBattle() {
       `<div><h3>${r.score > 0 ? "Vitória" : r.score < 0 ? "Derrota" : "Empate"}</h3><p><span class="${r.fichas >= 0 ? "positive" : "negative"}">${signed(r.fichas)} fichas</span> · ${signed(r.prestigio)} de prestígio</p></div>${button("Continuar", "continuar", null, {}, "primary")}`;
   }
 }
-function render() {
+function render(previous = null) {
   if (!state) return;
+  stopMotion();
+  const snapshots = previous ? captureCards() : [];
   document.body.dataset.phase = state.phase || "inicio";
   document.body.dataset.region = state.region ?? 0;
   const p = state.player;
@@ -650,11 +904,17 @@ function render() {
   document.body.classList.toggle("in-battle", combat);
   if (combat) renderBattle();
   else renderAdventure();
+  if (previous && !reducedMotion.matches) {
+    if (combat) playTableMotion(previous, snapshots);
+    resourceMotion(previous);
+  }
   lastPhase = state.phase;
 }
 async function act(acao, valor = null, extra = {}) {
   if (busy || !state) return;
   let acquired = null;
+  const previous = state;
+  let accepted = false;
   const previousItems = new Set(state.player?.itens || []);
   busy = true;
   $("global-error").hidden = true;
@@ -674,6 +934,7 @@ async function act(acao, valor = null, extra = {}) {
     if (!response.ok)
       throw new Error(data.erro || "Não foi possível concluir a ação.");
     state = data;
+    accepted = true;
     acquired = state.player?.itens.find((k) => !previousItems.has(k)) || null;
   } catch (e) {
     const el = $("welcome").open ? $("welcome-error") : $("global-error");
@@ -689,7 +950,7 @@ async function act(acao, valor = null, extra = {}) {
   } finally {
     busy = false;
     disabled.forEach(([b, d]) => (b.disabled = d));
-    render();
+    render(accepted ? previous : null);
     if (acquired) celebrate(acquired);
   }
 }
