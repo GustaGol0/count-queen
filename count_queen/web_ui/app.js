@@ -165,7 +165,7 @@ function cards(el, list) {
 }
 function info(title, html) {
   $("info-content").innerHTML =
-    `<div class="eyebrow">COUNT & QUEEN</div><h2>${esc(title)}</h2>${html}`;
+    `<div class="eyebrow">COUNT & QUEEN</div><h2 id="info-title">${esc(title)}</h2>${html}`;
   if (!$("info-dialog").open) $("info-dialog").showModal();
 }
 function itemList(keys, catalog) {
@@ -258,9 +258,12 @@ function mapHTML() {
   const nodes = state.nodes,
     rows = Math.max(...nodes.map((n) => n.row)) + 1;
   const height = rows * 104 + 35;
-  const x = (c) => 60 + c * 140,
-    y = (r) => height - 45 - r * 104;
-  let paths = "";
+  const x = (r) => 8 + (r * 84) / (rows - 1),
+    y = (c) => 20 + c * 30;
+  const mobileX = (c) => 15 + c * 35,
+    mobileY = (r) => 92 - (r * 84) / (rows - 1);
+  let paths = "",
+    mobilePaths = "";
   for (const a of nodes)
     for (const b of nodes) {
       if (
@@ -269,14 +272,19 @@ function mapHTML() {
       ) {
         const done =
           state.visited.includes(a.id) && state.visited.includes(b.id);
-        paths += `<path class="${done ? "travelled" : ""}" d="M ${x(a.col)} ${y(a.row)} L ${x(b.col)} ${y(b.row)}"/>`;
+        const available =
+          (state.visited.includes(a.id) && b.available) ||
+          (a.available && b.row === a.row + 1);
+        const cls = done ? "travelled" : available ? "next-road" : "";
+        paths += `<path class="${cls}" d="M ${x(a.row)} ${y(a.col)} L ${x(b.row)} ${y(b.col)}"/>`;
+        mobilePaths += `<path class="${cls}" d="M ${mobileX(a.col)} ${mobileY(a.row)} L ${mobileX(b.col)} ${mobileY(b.row)}"/>`;
       }
     }
-  return `<div class="map-intro"><div><h3>O reino tem mais de um caminho.</h3><p>Escolha um encontro conectado. Você avança uma camada por vez.</p></div><span class="map-counter">REGIÃO ${state.region + 1} / 4</span></div><div class="map-board" style="--map-height:${height}px"><svg viewBox="0 0 400 ${height}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes
+  return `<div class="map-intro"><div><h3>Escolha a próxima parada</h3><p>Siga uma das rotas iluminadas até o boss.</p></div><span class="map-counter">REGIÃO ${state.region + 1} / 4</span></div><div class="map-board" style="--map-height:${height}px"><svg class="map-landscape" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg><svg class="map-portrait" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${mobilePaths}</svg>${nodes
     .map((n) => {
       const visited = state.visited.includes(n.id),
         next = n.available;
-      return `<div class="map-node ${visited ? "visited" : ""} ${next ? "available" : ""} ${n.type === "boss" ? "boss-node" : ""}" style="left:${x(n.col) / 4}%;top:${y(n.row)}px"><button data-command="${encodeURIComponent(JSON.stringify({ acao: "no", valor: n.id }))}" ${!next ? "disabled" : ""} aria-label="${esc(n.name)}${next && !n.connected ? " · usar Bússola" : ""}" title="${esc(n.name)}"><span>${glyph[n.type]}</span></button><small>${esc(n.type === "boss" ? state.boss.nome : names[n.type])}${visited ? " · ✓" : ""}${next && !n.connected ? " · Bússola" : ""}</small></div>`;
+      return `<div class="map-node ${visited ? "visited" : ""} ${next ? "available" : ""} ${n.type === "boss" ? "boss-node" : ""}" style="--x:${x(n.row)}%;--y:${y(n.col)}%;--mx:${mobileX(n.col)}%;--my:${mobileY(n.row)}%"><button data-command="${encodeURIComponent(JSON.stringify({ acao: "no", valor: n.id }))}" ${!next ? "disabled" : ""} aria-label="${esc(n.name)}${next && !n.connected ? " · usar Bússola" : ""}" title="${esc(n.name)}"><span>${glyph[n.type]}</span></button><small>${esc(n.type === "boss" ? state.boss.nome : names[n.type])}${visited ? " · ✓" : ""}${next && !n.connected ? " · Bússola" : ""}</small></div>`;
     })
     .join("")}</div><div class="map-key">${Object.entries(names)
     .map(([k, v]) => `<span>${glyph[k]} ${v}</span>`)
@@ -410,6 +418,18 @@ function renderAdventure() {
   else if (phase === "pedagio")
     html += `<h3>O Rei exige uma audiência.</h3><p>Pague 8 fichas ou revele sua carta inicial. Se revelar, o Rei comprará até 19 nesta rodada.</p><div class="actions">${button("Pagar 8 fichas", "pedagio", "pagar", {}, "primary", p.fichas < 8)}${button("Revelar a carta", "pedagio", "revelar")}</div>`;
   $("adventure-panel").innerHTML = html;
+  if (
+    lastPhase !== phase &&
+    !matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    $("adventure-panel").animate(
+      [
+        { opacity: 0, transform: "translateY(10px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 220, easing: "steps(5)" },
+    );
+  }
   $("new-legend")?.addEventListener("click", () => $("welcome").showModal());
   $("affinity-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -442,7 +462,15 @@ function renderBattle() {
         " · ",
       )}. ${b.remaining} cartas para comprar.</p><p>Bênçãos: ${b.blessings}. ${b.draws >= 2 ? "DESEMPATE ATIVO: em empate comum, vence a mão válida com menos cartas; igualdade favorece você." : ""}</p>${b.contract ? `<p>Contrato: ${esc(b.contract)}.</p>` : ""}${b.charge ? `<p>Cobrança: ${esc(b.charge_descriptions[b.charge])}</p>` : ""}${b.identity === "gemeas" ? `<p>Defesas já gastas: ${b.sisters_saved.map((x) => (x === "a" ? "Íris" : "Véspera")).join(", ") || "nenhuma"}.</p>` : ""}${b.identity === "sinos" ? `<p>Sinos: ${b.bells}/7.</p>` : ""}</details>`;
   $("table").dataset.chapter = state.region;
-  $("dealer-name").textContent = b.name;
+  $("table").dataset.outcome = b.result
+    ? b.result.score > 0
+      ? "win"
+      : b.result.score < 0
+        ? "loss"
+        : "draw"
+    : "";
+  $("dealer-name").textContent =
+    b.name + (b.identity === "rei" ? ` · Ato ${b.act}/3` : "");
   $("dealer-rule").textContent = `Para em ${b.dealer_stop}`;
   const showing = b.hands.length > 0;
   cards(
@@ -458,7 +486,7 @@ function renderBattle() {
       ? `${b.dealer_total} / ${b.limit}`
       : b.preview
         ? "CARTA REVELADA PELO CONTRATO"
-        : "A CARTA OCULTA GUARDA UM SEGREDO";
+        : "CARTA OCULTA";
   const hands = showing
     ? b.hands
     : [{ cards: [{ ghost: true }, { ghost: true }], total: 0 }];
@@ -491,8 +519,7 @@ function renderBattle() {
   $("result").hidden = phase !== "resultado";
   $("oracle").hidden = phase !== "oraculo";
   if (phase === "aposta") {
-    $("status").textContent =
-      "Escolha sua aposta. Seu baralho acompanha você pela estrada.";
+    $("status").textContent = "Faça sua aposta.";
     $("bet").max = Math.floor(p.fichas);
     if (lastPhase !== phase || Number($("bet").value) > p.fichas)
       $("bet").value = Math.max(
@@ -523,6 +550,11 @@ function renderBattle() {
       brasa: "Atiçar a Brasa",
     };
     $("actions").innerHTML = Object.entries(labels)
+      .filter(
+        ([k]) =>
+          ["pedir", "parar", "dobrar", "dividir", "desistir"].includes(k) ||
+          b.actions.includes(k),
+      )
       .map(([k, l]) =>
         button(
           l,
@@ -566,22 +598,23 @@ function renderBattle() {
       button("Usar Cetro", "cetro", null, {}, "primary") +
       button("Manter resultado", "liquidar");
   } else if (phase === "resultado") {
-    $("status").textContent =
-      "Rodada encerrada. Os baralhos e o placar foram salvos.";
+    $("status").textContent = "Rodada encerrada.";
     const r = b.result;
     $("result").innerHTML =
-      `<div><h3>${r.score > 0 ? "A rodada é sua." : r.score < 0 ? "O rival levou a melhor." : "Honras divididas."}</h3><p><span class="${r.fichas >= 0 ? "positive" : "negative"}">${signed(r.fichas)} fichas</span> · ${signed(r.prestigio)} de prestígio</p></div>${button("Continuar", "continuar", null, {}, "primary")}`;
+      `<div><h3>${r.score > 0 ? "Vitória" : r.score < 0 ? "Derrota" : "Empate"}</h3><p><span class="${r.fichas >= 0 ? "positive" : "negative"}">${signed(r.fichas)} fichas</span> · ${signed(r.prestigio)} de prestígio</p></div>${button("Continuar", "continuar", null, {}, "primary")}`;
   }
 }
 function render() {
   if (!state) return;
-  $("history").innerHTML = historyHTML();
+  document.body.dataset.phase = state.phase || "inicio";
+  document.body.dataset.region = state.region ?? 0;
   const p = state.player;
   $("table").hidden = true;
   $("control-panel").hidden = true;
   $("battle-rules").hidden = true;
   $("adventure-panel").hidden = false;
   if (!p) {
+    document.body.classList.remove("in-battle");
     $("adventure-panel").innerHTML =
       '<div class="encounter-emblem">♛</div><h3>Quatro regiões. Uma coroa.</h3><p>Escolha caminhos, construa seu baralho e enfrente o Rei Sem Rosto.</p>';
     if (!$("welcome").open) $("welcome").showModal();
@@ -592,34 +625,21 @@ function render() {
   $("player-title").textContent = p.titulo;
   $("balance").textContent = fmt.format(p.fichas);
   $("prestige").innerHTML = `${p.prestigio} <small>/ 100</small>`;
-  $("progress").value = p.prestigio;
-  $("progress-caption").textContent =
-    "Influência abre oportunidades. O mapa leva à coroa.";
-  $("path-label").innerHTML =
-    `<span></span> Caminho da ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}`;
-  $("save-status").textContent = "Jornada salva automaticamente";
+  $("deck-count").textContent = state.deck.cards.length;
+  $("draw-count").textContent = state.deck.remaining;
+  $("relic-count").textContent = p.itens.length;
   $("chapter-label").textContent =
     `REGIÃO ${state.region + 1} · ${phaseNames[state.phase] || "À MESA"}`;
   $("chapter").textContent = state.regions[state.region];
   $("round").textContent = String(
     state.round_count + (state.phase === "resultado" ? 0 : 1),
   ).padStart(2, "0");
-  $("route").innerHTML = state.regions
-    .map(
-      (name, i) =>
-        `<li class="${state.region === i ? "current" : state.region > i ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Região atravessada" : "Além da estrada"}</small></div></li>`,
-    )
+  $("relics").innerHTML = p.itens
+    .map((k) => {
+      const item = state.catalog.relics[k];
+      return `<button class="relic ${item.raridade}" data-relic="${k}" aria-label="${esc(item.nome)} · ${rarityLabels[item.raridade]}" title="${esc(item.nome)}">${sigil(k)}</button>`;
+    })
     .join("");
-  $("relics").innerHTML =
-    p.itens
-      .map(
-        (k) =>
-          `<button class="relic ${state.catalog.relics[k].raridade}" data-inventory title="${esc(state.catalog.relics[k].descricao)}">${sigil(k)} ${esc(state.catalog.relics[k].nome)}<small>${rarityLabels[state.catalog.relics[k].raridade]}</small></button>`,
-      )
-      .join("") ||
-    '<div class="relic-empty"><svg><use href="#diamond"/></svg><p>Nenhuma relíquia</p><small>Encontros vencidos concedem relíquias.</small></div>';
-  $("oaths-summary").innerHTML =
-    `<div class="section-label">SEUS JURAMENTOS</div>${p.juramentos.map((k) => `<button class="oath-summary" data-inventory title="${esc(state.catalog.oaths[k].descricao)}">${esc(state.catalog.oaths[k].nome)}${p.consagrado === k ? " · consagrado" : ""}</button>`).join("")}`;
   $("global-notice").hidden = !state.notice;
   $("global-notice").textContent = state.notice;
   const combat = battlePhases.includes(state.phase);
@@ -627,6 +647,7 @@ function render() {
   $("table").hidden = !combat;
   $("control-panel").hidden = !combat;
   $("battle-rules").hidden = !combat;
+  document.body.classList.toggle("in-battle", combat);
   if (combat) renderBattle();
   else renderAdventure();
   lastPhase = state.phase;
@@ -682,6 +703,11 @@ document.addEventListener("click", (e) => {
     act(acao, valor, extra);
   }
   if (e.target.closest("[data-inventory]")) inventory();
+  const relic = e.target.closest("[data-relic]");
+  if (relic) {
+    const key = relic.dataset.relic;
+    info(state.catalog.relics[key].nome, itemList([key], state.catalog.relics));
+  }
 });
 $("bet-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -706,6 +732,15 @@ $("welcome").addEventListener("cancel", (e) => {
 });
 $("inventory-button").addEventListener("click", inventory);
 $("deck-button").addEventListener("click", deckView);
+$("table-deck-button").addEventListener("click", deckView);
+$("journey-button").addEventListener("click", () => {
+  if (!state?.player) return;
+  const p = state.player;
+  info(
+    "Sua jornada",
+    `<p>${esc(p.nome)} · ${esc(p.titulo)} · ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}</p><ol class="route">${state.regions.map((name, i) => `<li class="${i === state.region ? "current" : i < state.region ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Concluída" : "Por descobrir"}</small></div></li>`).join("")}</ol><p class="note">Jornada salva automaticamente.</p>`,
+  );
+});
 $("history-button").addEventListener("click", () =>
   info("Crônica da jornada", historyHTML()),
 );

@@ -4,7 +4,8 @@ Um blackjack roguelite de fantasia medieval. Escolha caminhos em quatro regiões
 modifique seu próprio baralho, combine 24 relíquias com 12 juramentos e desafie
 sete bosses — até o Rei Sem Rosto, que responde à história da sua jornada.
 
-**Versão 0.5.0:** campanha visual completa por mapa. Leia os [patchnotes](CHANGELOG.md)
+**Próxima atualização — Mesa Viva:** mesa em tela ampla, recursos compactos,
+menus sob demanda e mapa horizontal no computador. Leia os [patchnotes](CHANGELOG.md)
 e o [catálogo de relíquias, juramentos e bosses](CATALOGO.md).
 
 ## Jogar
@@ -22,6 +23,11 @@ No Windows, abra **Jogar Count e Queen.bat** ou use `py jogar_visual.py`.
 No macOS/Linux, use `python3 jogar_visual.py` quando necessário.
 O inicializador abre o navegador e escolhe uma porta livre se 8000 estiver ocupada.
 Mantenha a janela do terminal aberta enquanto joga; Ctrl+C encerra o servidor.
+
+Durante o combate, use **P** para pedir, **S** para parar e **D** para dobrar.
+O rodapé abre seu baralho, relíquias e histórico; clique no nome do personagem
+para ver a jornada e em um símbolo de relíquia para consultar seu efeito.
+As janelas fecham com **Esc**. O botão **Tela cheia** fica no topo.
 
 Para iniciar sem abrir o navegador:
 

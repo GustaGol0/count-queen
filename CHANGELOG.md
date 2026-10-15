@@ -1,5 +1,17 @@
 # Notas de atualização
 
+## Em desenvolvimento — Mesa Viva — 15/10/2026
+
+- Mesa de combate ocupa a área central, com cartas maiores, aposta sobre o feltro e ações junto à mão do jogador.
+- Fichas e prestígio no topo; nome, relíquias equipadas e atalhos no rodapé. As antigas colunas laterais foram removidas.
+- Baralho, histórico, jornada e catálogo abrem sob demanda. Cada símbolo equipado abre o efeito daquela relíquia.
+- Pilha de compra na mesa mostra a quantidade restante e abre a inspeção do baralho.
+- Mapa horizontal no computador e vertical no celular, com caminhos disponíveis e percorridos destacados.
+- Cores da mesa acompanham a região. Contratos em pergaminho, revelações por raridade, tela cheia e movimento reduzido preservados.
+- Transições curtas entre telas; ações especiais de relíquias aparecem quando disponíveis.
+- Combate comum cabe em notebook de 1366 × 768; mãos longas e até quatro mãos divididas se reorganizam sem cortar cartas.
+- Validação: 93 testes de regras/persistência; verificação no Chromium de 16 estados, navegação pelos menus, bloqueio de atalhos em janelas, rodada completa e recarga do save. Aquisições nas quatro raridades e tela cheia também verificadas.
+
 ## 0.5.1 — Selos e Pergaminhos — 14/10/2026
 
 - Interface pixelada com fonte local, contornos em blocos e mesa verde; menos frases decorativas e informações repetidas.
