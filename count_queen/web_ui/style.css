@@ -2131,3 +2131,259 @@ dialog h2 {
     padding-bottom: 3px;
   }
 }
+
+/* Origins, consequences and the presence across the felt. */
+.welcome-dialog {
+  width: min(680px, calc(100% - 28px));
+}
+.origin-options {
+  border: 0;
+  padding: 0;
+  margin: 12px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+}
+.origin-options legend {
+  margin-bottom: 10px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+}
+.origin-card {
+  border: 1px solid #687664;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  background: #17251f;
+}
+.origin-card:has(input:checked) {
+  border-color: #dec380;
+  box-shadow: inset 0 0 0 1px #dec380;
+  background: #29372a;
+}
+.origin-card.locked {
+  opacity: 0.65;
+  cursor: default;
+}
+.origin-card span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.origin-card input {
+  width: auto;
+  margin: 0;
+  accent-color: #dfc27e;
+}
+.origin-card strong {
+  font:
+    600 14px/1.3 Arial,
+    sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.origin-card small,
+.origin-card em {
+  display: block;
+  margin-top: 8px;
+  font:
+    12px/1.45 Arial,
+    sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.origin-card em {
+  color: #d6bf87;
+}
+.boss-presence {
+  position: absolute;
+  left: 22px;
+  top: 23%;
+  width: 155px;
+  text-align: center;
+  z-index: 2;
+  pointer-events: none;
+}
+.boss-portrait {
+  width: 100px;
+  height: 124px;
+  filter: drop-shadow(0 8px 12px #0008);
+}
+.boss-presence p {
+  font:
+    italic 14px/1.45 Georgia,
+    serif;
+  color: #e0d4b5;
+  margin: 8px 0;
+}
+.boss-object {
+  color: #b9ad8d;
+  font:
+    10px/1.4 Arial,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.boss-presence[data-mood="win"] .boss-portrait {
+  filter: drop-shadow(0 0 10px #d6b96c55);
+}
+.boss-presence[data-boss="gemeas"] .boss-portrait {
+  color: #b59bce;
+}
+.bell-meter {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.bell-meter i {
+  font-style: normal;
+  color: #60756a;
+}
+.bell-meter .lit {
+  color: #f3d58a;
+  text-shadow: 0 0 6px #e9c275;
+}
+.effect-feed {
+  font-size: 12px;
+  color: #dcc791;
+  margin-top: 8px;
+}
+.effect-feed ul {
+  padding-left: 20px;
+  line-height: 1.7;
+}
+#result-breakdown {
+  margin-top: 10px;
+  font-size: 13px;
+}
+#result-breakdown summary,
+.effect-feed summary {
+  cursor: pointer;
+}
+.hand-calculation {
+  padding: 12px 0;
+  border-bottom: 1px solid #52604e;
+}
+.hand-calculation p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+.hand-calculation ul {
+  max-width: 420px;
+  padding-left: 18px;
+  line-height: 1.8;
+}
+.hand-calculation li strong {
+  float: right;
+  margin-left: 20px;
+  color: #e0c987;
+}
+.story-chapter {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: #d8be78;
+}
+.story-record {
+  border-left: 2px solid #b19a63;
+  padding: 4px 16px;
+  margin: 16px 0;
+}
+.story-record p {
+  line-height: 1.5;
+}
+@media (max-width: 1000px) and (min-width: 701px) {
+  .boss-presence {
+    left: 10px;
+    width: 125px;
+  }
+  .boss-portrait {
+    width: 75px;
+    height: 94px;
+  }
+  .boss-presence p {
+    font-size: 12px;
+  }
+}
+@media (max-width: 700px) {
+  .boss-presence {
+    left: 10px;
+    top: 6px;
+    width: calc(100% - 65px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    height: 58px;
+  }
+  .boss-portrait {
+    width: 38px;
+    height: 52px;
+    flex-shrink: 0;
+  }
+  .boss-presence p {
+    font-size: 11px;
+    line-height: 1.25;
+    margin: 3px 0;
+  }
+  .boss-object {
+    font-size: 8px;
+  }
+  .boss-presence .bell-meter {
+    justify-content: flex-start;
+    line-height: 10px;
+  }
+  .table:has(.boss-presence:not([hidden])) .dealer-area {
+    padding-top: 48px;
+  }
+  .origin-options {
+    grid-template-columns: 1fr;
+  }
+  #sound-button {
+    font-size: 10px;
+    padding: 6px;
+  }
+  .inline-form {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  .inline-form select {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+.boss-presence[data-boss="gemeas"][data-sister="b"] .boss-portrait {
+  transform: scaleX(-1);
+  filter: hue-rotate(35deg) drop-shadow(0 8px 12px #0008);
+}
+@media (min-width: 701px) and (max-height: 849px) {
+  .welcome-dialog {
+    padding: 20px 28px;
+  }
+  .welcome-ornament svg {
+    width: 40px;
+    height: 40px;
+  }
+  .welcome-dialog h2 {
+    font-size: 32px;
+    margin: 6px 0;
+  }
+  .welcome-dialog p {
+    margin: 6px 0;
+  }
+  .welcome-dialog form {
+    margin: 12px 0;
+    gap: 6px;
+  }
+  .origin-options {
+    margin: 8px 0;
+    gap: 8px;
+  }
+  .origin-card {
+    padding: 10px;
+  }
+  .welcome-dialog .primary {
+    margin-top: 4px;
+  }
+}

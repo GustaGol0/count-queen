@@ -62,6 +62,7 @@ const battlePhases = [
   "seguro",
   "oraculo",
   "revelacao",
+  "ultima_palavra",
   "resultado",
 ];
 let state,
@@ -321,6 +322,10 @@ function resourceMotion(previous) {
   }
 }
 const sigils = {
+  bolso_falso: "M2 3h12v10H2z M4 5h8v6H4z M6 1h4v6H6z",
+  balanca_carrasco:
+    "M7 1h2v12h4v2H3v-2h4V5H2V3h12v2H9z M1 6h4v4H1z M11 6h4v4h-4z",
+  ultima_palavra: "M2 1h10v2h2v9H8l-4 3v-3H2z M4 4h6v2H4z M4 8h4v2H4z",
   manilha_sorte: "M4 5h8v6H4z M2 7h2v2H2z M12 7h2v2h-2z",
   moeda_peregrino: "M5 2h6v2h2v8h-2v2H5v-2H3V4h2z M7 5v6h2V5z",
   broche_prudencia: "M7 1h2v3h3v3h3v2h-3v3H9v3H7v-3H4V9H1V7h3V4h3z",
@@ -436,7 +441,7 @@ function inventory() {
         .map(([r, n]) => `<p>${esc(r)}: nível ${n} · +${15 * n}% de lucro.</p>`)
         .join("") ||
       "<p>Nenhuma afinidade. Os rituais do Empório podem criar uma.</p>"
-    }<h3>Dívidas</h3><p>Juramento: ${fmt.format(state.player.debt)} fichas. Empréstimo: ${fmt.format(state.player.loan)} fichas.</p><details><summary>Catálogo completo · 24 relíquias e 12 juramentos</summary>${itemList(Object.keys(state.catalog.relics), state.catalog.relics)}${itemList(Object.keys(state.catalog.oaths), state.catalog.oaths)}</details></div>`,
+    }<h3>Dívidas</h3><p>Familiar: ${fmt.format(state.player.origin_debt || 0)} fichas (25% do lucro antes do juramento). Juramento: ${fmt.format(state.player.debt)} fichas. Empréstimo: ${fmt.format(state.player.loan)} fichas.</p><details><summary>Catálogo completo · ${Object.keys(state.catalog.relics).length} relíquias e 12 juramentos</summary>${itemList(Object.keys(state.catalog.relics), state.catalog.relics)}${itemList(Object.keys(state.catalog.oaths), state.catalog.oaths)}</details></div>`,
   );
 }
 function deckView() {
@@ -449,7 +454,7 @@ function deckView() {
             .map(([v, n]) => `${esc(v)}: ${n}`)
             .join(" · ")}</p>`
         : ""
-    }<div class="deck-grid">${state.deck.cards.map((c) => `<div>${cardHTML(c)}</div>`).join("")}</div><h3>Descarte</h3><p>${state.deck.discard.map((c) => `${esc(c.valor)}${suits[c.naipe] || "◇"}`).join(" · ") || "Ainda vazio."}</p><h3>Marcas</h3>${Object.values(
+    }<div class="deck-grid">${state.deck.cards.map((c) => `<div>${cardHTML(c)}${c.id === state.player.reserved ? "<small>Guardada · próxima rodada</small>" : ""}</div>`).join("")}</div><h3>Descarte</h3><p>${state.deck.discard.map((c) => `${esc(c.valor)}${suits[c.naipe] || "◇"}`).join(" · ") || "Ainda vazio."}</p><h3>Marcas</h3>${Object.values(
       state.catalog.marks,
     )
       .map((m) => `<p><strong>${esc(m.nome)}:</strong> ${esc(m.descricao)}</p>`)
@@ -545,7 +550,7 @@ function mapHTML() {
 }
 function workshop() {
   const options = state.deck.cards
-    .filter((c) => !c.temporaria)
+    .filter((c) => !c.temporaria && c.id !== state.player.reserved)
     .map(
       (c) =>
         `<option value="${c.id}">${esc(c.valor)} de ${esc(c.naipe)}${c.marca ? " · " + esc(c.marca) : ""} · #${c.id}</option>`,
@@ -634,7 +639,7 @@ function renderAdventure() {
       biblioteca: "Um livro sobreviveu ao incêndio.",
       audiencia: "Seu nome chegou antes de você.",
     }[s.event];
-    html += `<h3>${phase === "evento" ? title : phase === "refugio" ? "A estrada pode esperar." : "Quem você pretende se tornar?"}</h3><div class="story-choices">${s.options.map((o) => `<article class="story-choice"><div><h4>${esc(o.nome)}</h4><p>${esc(o.descricao)}</p></div>${button("Escolher", "escolha", o.id, {}, "primary")}</article>`).join("")}</div>`;
+    html += `<h3>${phase === "evento" ? esc(s.story?.title || title) : phase === "refugio" ? "A estrada pode esperar." : "Quem você pretende se tornar?"}</h3>${s.story ? `<p class="story-chapter">CAPÍTULO ${s.story.chapter} DE 3</p><p>${esc(s.story.text)}</p>` : ""}<div class="story-choices">${s.options.map((o) => `<article class="story-choice"><div><h4>${esc(o.nome)}</h4><p>${esc(o.descricao)}</p></div>${button("Escolher", "escolha", o.id, {}, "primary", o.enabled === false)}</article>`).join("")}</div>`;
   } else if (phase === "conclusao") {
     const r = s.result;
     html += `<div class="encounter-emblem">${r.won ? "♛" : "◇"}</div><h3>${r.won ? "Vitória" : "Derrota"}</h3><p>${esc(r.name)} · ${r.won ? "Recompensas recebidas." : "Sem recompensa de vitória; prestígio reduzido."}</p>${r.boss && !r.won ? `<p>${r.retry ? `Uma revanche está disponível por ${r.cost} fichas.` : "Sua revanche já foi usada."} Encerrar o desafio termina a jornada.</p>` : ""}<div class="actions">${r.retry ? button(`Revanche · ${r.cost} fichas`, "revanche", null, {}, "primary", p.fichas < r.cost) : ""}${button(r.boss && !r.won ? "Encerrar jornada" : r.boss ? "Próxima região" : "Voltar ao mapa", "seguir", null, {}, "primary")}</div>`;
@@ -713,6 +718,7 @@ function renderBattle() {
       .join(
         " · ",
       )}. ${b.remaining} cartas para comprar.</p><p>Bênçãos: ${b.blessings}. ${b.draws >= 2 ? "DESEMPATE ATIVO: em empate comum, vence a mão válida com menos cartas; igualdade favorece você." : ""}</p>${b.contract ? `<p>Contrato: ${esc(b.contract)}.</p>` : ""}${b.charge ? `<p>Cobrança: ${esc(b.charge_descriptions[b.charge])}</p>` : ""}${b.identity === "gemeas" ? `<p>Defesas já gastas: ${b.sisters_saved.map((x) => (x === "a" ? "Íris" : "Véspera")).join(", ") || "nenhuma"}.</p>` : ""}${b.identity === "sinos" ? `<p>Sinos: ${b.bells}/7.</p>` : ""}</details>`;
+  renderPresence(b);
   $("table").dataset.chapter = state.region;
   $("table").dataset.outcome = b.result
     ? b.result.score > 0
@@ -767,11 +773,21 @@ function renderBattle() {
       ? "BLACKJACK PAGA 3:2"
       : `LIMITE ${b.limit} · SEM BLACKJACK NATURAL`;
   $("bet-form").hidden = phase !== "aposta";
-  $("actions").hidden = !["jogando", "seguro", "revelacao"].includes(phase);
+  $("actions").hidden = ![
+    "jogando",
+    "seguro",
+    "revelacao",
+    "ultima_palavra",
+  ].includes(phase);
   $("result").hidden = phase !== "resultado";
+  $("result-breakdown").hidden = phase !== "resultado";
+  if (phase !== "resultado") $("result-breakdown").open = false;
   $("oracle").hidden = phase !== "oraculo";
   if (phase === "aposta") {
-    $("status").textContent = "Faça sua aposta.";
+    const reserved = state.deck.cards.find((c) => c.id === p.reserved);
+    $("status").textContent = reserved
+      ? `Faça sua aposta. Bolso Falso abrirá com ${reserved.valor} de ${reserved.naipe}.`
+      : "Faça sua aposta.";
     $("bet").max = Math.floor(p.fichas);
     if (lastPhase !== phase || Number($("bet").value) > p.fichas)
       $("bet").value = Math.max(
@@ -800,6 +816,7 @@ function renderBattle() {
       trono: "Trocar mãos · Trono",
       bencao: "Usar bênção",
       brasa: "Atiçar a Brasa",
+      guardar: "Guardar carta · Bolso Falso",
     };
     $("actions").innerHTML = Object.entries(labels)
       .filter(
@@ -818,6 +835,17 @@ function renderBattle() {
         ),
       )
       .join("");
+    if (b.actions.includes("transferir")) {
+      $("actions").innerHTML +=
+        `<form id="balance-form" class="inline-form"><label for="balance-card">BALANÇA DO CARRASCO</label><select id="balance-card" aria-label="Carta a transferir">${b.hands[b.current].cards.map((c) => `<option value="${c.id}">${esc(c.valor)} de ${esc(c.naipe)}</option>`).join("")}</select><select id="balance-target" aria-label="Mão de destino">${b.hands.map((h, i) => (i > b.current ? `<option value="${i}">Mão ${i + 1} · ${h.total} pontos</option>` : "")).join("")}</select><button class="action-button">Transferir carta</button></form>`;
+      $("balance-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        act("transferir", null, {
+          carta: $("balance-card").value,
+          destino: Number($("balance-target").value),
+        });
+      });
+    }
     if (b.actions.includes("coroa"))
       $("actions").innerHTML +=
         '<form id="crown-form" class="inline-form"><label for="crown-value">CARTA DA COROA</label><input id="crown-value" type="number" min="1" max="11" value="1" required><button class="action-button">Fixar valor</button></form>';
@@ -849,7 +877,14 @@ function renderBattle() {
     $("actions").innerHTML =
       button("Usar Cetro", "cetro", null, {}, "primary") +
       button("Manter resultado", "liquidar");
+  } else if (phase === "ultima_palavra") {
+    $("status").textContent =
+      "Última Palavra · o rival parou. Compre uma carta ou aceite o resultado. Uma compra por encontro.";
+    $("actions").innerHTML =
+      button("Comprar última carta", "comprar_final", null, {}, "primary") +
+      button("Aceitar resultado", "aceitar_resultado");
   } else if (phase === "resultado") {
+    $("calculation").innerHTML = calculationHTML(b.result);
     $("status").textContent = "Rodada encerrada.";
     const r = b.result;
     $("result").innerHTML =
@@ -859,6 +894,7 @@ function renderBattle() {
 function render(previous = null) {
   if (!state) return;
   stopMotion();
+  renderOrigins();
   const snapshots = previous ? captureCards() : [];
   document.body.dataset.phase = state.phase || "inicio";
   document.body.dataset.region = state.region ?? 0;
@@ -894,8 +930,14 @@ function render(previous = null) {
       return `<button class="relic ${item.raridade}" data-relic="${k}" aria-label="${esc(item.nome)} · ${rarityLabels[item.raridade]}" title="${esc(item.nome)}">${sigil(k)}</button>`;
     })
     .join("");
-  $("global-notice").hidden = !state.notice;
-  $("global-notice").textContent = state.notice;
+  const unlockText = (state.new_unlocks || [])
+    .map((k) => `Nova origem desbloqueada: ${state.catalog.origins[k].nome}.`)
+    .join(" ");
+  $("global-notice").hidden = !(state.notice || unlockText);
+  $("global-notice").textContent = [state.notice, unlockText]
+    .filter(Boolean)
+    .join(" ");
+  renderEffects(previous);
   const combat = battlePhases.includes(state.phase);
   $("adventure-panel").hidden = combat;
   $("table").hidden = !combat;
@@ -908,6 +950,24 @@ function render(previous = null) {
     if (combat) playTableMotion(previous, snapshots);
     resourceMotion(previous);
   }
+  if (
+    previous &&
+    combat &&
+    state.battle.presence &&
+    !reducedMotion.matches &&
+    (state.battle.presence.speech !== previous.battle?.presence?.speech ||
+      state.battle.active !== previous.battle?.active)
+  ) {
+    tween(
+      $("boss-presence"),
+      [
+        { opacity: 0.35, transform: "translateY(5px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      { duration: 400 },
+    );
+  }
+  if (previous) playSound(previous);
   lastPhase = state.phase;
 }
 async function act(acao, valor = null, extra = {}) {
@@ -986,7 +1046,12 @@ $("bet-form")
   );
 $("new-game-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  act("nova", null, { nome: $("name").value, genero: $("gender").value });
+  act("nova", null, {
+    nome: $("name").value,
+    genero: $("gender").value,
+    origem:
+      document.querySelector("input[name=origin]:checked")?.value || "viajante",
+  });
 });
 $("welcome").addEventListener("cancel", (e) => {
   if (!state?.player) e.preventDefault();
@@ -999,7 +1064,7 @@ $("journey-button").addEventListener("click", () => {
   const p = state.player;
   info(
     "Sua jornada",
-    `<p>${esc(p.nome)} · ${esc(p.titulo)} · ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}</p><ol class="route">${state.regions.map((name, i) => `<li class="${i === state.region ? "current" : i < state.region ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Concluída" : "Por descobrir"}</small></div></li>`).join("")}</ol><p class="note">Jornada salva automaticamente.</p>`,
+    `<p>${esc(p.nome)} · ${esc(p.titulo)} · ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}</p><ol class="route">${state.regions.map((name, i) => `<li class="${i === state.region ? "current" : i < state.region ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Concluída" : "Por descobrir"}</small></div></li>`).join("")}</ol>${journeyStories(p)}<p class="note">Jornada salva automaticamente.</p>`,
   );
 });
 $("history-button").addEventListener("click", () =>
@@ -1069,3 +1134,174 @@ document.addEventListener("fullscreenchange", () => {
   fullscreenButton.textContent = active ? "Sair da tela cheia" : "Tela cheia";
   fullscreenButton.setAttribute("aria-pressed", String(active));
 });
+
+// The server supplies the applied effects and calculation; the UI never guesses payouts.
+function effectName(key) {
+  return (
+    state.catalog.relics[key]?.nome ||
+    state.catalog.oaths[key]?.nome ||
+    {
+      afinidade: "Afinidade",
+      marcas: "Marcas das cartas",
+      contrato: "Contrato",
+      credor: "Dívida familiar",
+    }[key] ||
+    key
+  );
+}
+function calculationHTML(result) {
+  return (
+    result.hands
+      .map((h, i) => {
+        const c = h.calculation;
+        if (!c) return `<p>Mão ${i + 1}: ${esc(h.texto)}.</p>`;
+        const raw = 1 + c.parts.reduce((n, p) => n + p.amount, 0);
+        return `<article class="hand-calculation"><h4>Mão ${i + 1} · ${esc(h.texto)}</h4><p>Aposta em jogo: ${fmt.format(c.bet)} fichas${c.natural ? " · blackjack 3:2" : ""}.</p>${c.parts.length ? `<ul>${c.parts.map((p) => `<li>${esc(effectName(p.source))} <strong>${signed(p.amount * 100)}%</strong></li>`).join("")}</ul>` : "<p>Sem modificadores de lucro.</p>"}<p>Multiplicador ${c.applied ? "aplicado" : "disponível, sem aplicação nesta mão"}: <strong>×${fmt.format(c.multiplier)}</strong>${Math.abs(raw - c.multiplier) > 0.0001 ? " · limitado entre ×0,1 e ×3" : ""}.</p>${c.applied ? `<p>Lucro antes das dívidas: ${fmt.format(c.profit)}. Familiar: −${fmt.format(c.payments.family)} · juramento: −${fmt.format(c.payments.oath)}. Lucro recebido: ${fmt.format(c.payments.received)}.</p>` : ""}<p>Creditado na liquidação: ${fmt.format(c.credited)} fichas, incluindo aposta devolvida e efeitos adicionais. Devolução por desistência e seguro acontece antes da liquidação.</p></article>`;
+      })
+      .join("") +
+    `<p class="note">Saldo líquido da rodada: ${signed(result.fichas)} fichas. Inclui apostas, seguro, devoluções, cobranças e efeitos da rodada.</p>`
+  );
+}
+function renderOrigins() {
+  const el = $("origin-options"),
+    selected =
+      document.querySelector("input[name=origin]:checked")?.value || "viajante";
+  const signature = JSON.stringify(state.unlocks);
+  if (el.dataset.signature === signature) return;
+  el.dataset.signature = signature;
+  el.innerHTML =
+    "<legend>SUA ORIGEM</legend>" +
+    Object.entries(state.catalog.origins)
+      .map(([k, o]) => {
+        const available =
+          k === "viajante" || state.unlocks.includes("origem_" + k);
+        return `<label class="origin-card ${available ? "" : "locked"}"><span><input type="radio" name="origin" value="${k}" ${k === selected ? "checked" : ""} ${available ? "" : "disabled"}><strong>${esc(o.nome)}</strong></span><small>${esc(o.descricao)}</small><em>${available ? "Disponível" : `Bloqueada · ${esc(o.unlock)}`}</em></label>`;
+      })
+      .join("");
+}
+function journeyStories(p) {
+  return `<h3>${esc(state.catalog.origins[p.origem]?.nome || "Viajante")}</h3><p>${esc(state.catalog.origins[p.origem]?.descricao || "")}</p><p>Dívida familiar restante: ${fmt.format(p.origin_debt || 0)} fichas.</p><h3>Encontros que deixam marcas</h3>${(p.story_log || []).map((s) => `<article class="story-record"><strong>${esc(s.title)} · capítulo ${s.chapter}</strong><p>${esc(s.choice)} — ${esc(s.consequence)}</p></article>`).join("") || "<p>Suas escolhas nos encontros recorrentes aparecerão aqui.</p>"}`;
+}
+function renderEffects(previous) {
+  const effects = state.effects || [],
+    el = $("effect-feed");
+  el.hidden = !effects.length;
+  el.innerHTML = effects.length
+    ? `<details><summary>${effects.length} efeito${effects.length > 1 ? "s" : ""} ativado${effects.length > 1 ? "s" : ""} · ${esc(effectName(effects[0].source))}</summary><ul>${effects.map((e) => `<li><strong>${esc(effectName(e.source))}</strong> · ${esc(e.text)}</li>`).join("")}</ul></details>`
+    : "";
+  if (previous && !reducedMotion.matches) {
+    for (const key of new Set(effects.map((e) => e.source))) {
+      const node = document.querySelector(`[data-relic="${CSS.escape(key)}"]`);
+      if (node)
+        tween(
+          node,
+          [
+            { transform: "scale(1)", filter: "brightness(1)" },
+            { transform: "scale(1.2)", filter: "brightness(1.9)" },
+            { transform: "scale(1)", filter: "brightness(1)" },
+          ],
+          { duration: 850 },
+        );
+    }
+  }
+}
+function bossPortrait(b) {
+  const shapes = {
+    ferrugem:
+      '<path d="M22 42V27Q48 6 74 27v15L62 34H34Z" fill="#774e39"/><circle cx="73" cy="28" r="12" fill="#774e39"/><circle cx="27" cy="54" r="4" fill="#d8b56d"/><circle cx="69" cy="54" r="4" fill="#d8b56d"/><circle cx="73" cy="91" r="12" fill="#b87945"/><path d="M73 83v16m-5-8h10" stroke="#f7d398"/>',
+    sinos:
+      '<path d="M17 77V34Q48-7 79 34v43L65 57V33H31v24Z" fill="#8c9180"/><path d="M35 30h26l-3 13H38Z" fill="#eadbb3"/><path d="M67 95h19l-4-7v-7q-6-9-11 0v7Z" fill="#d6b367"/>',
+    gemeas:
+      '<path d="M24 59V26q24-22 48 0v33L61 29 45 42 32 32Z" fill="#b8a4ce"/><path d="M27 44h42l-7 14H34Z" fill="#493b61"/><path d="M48 44v14" stroke="#dbbbdc"/><path d="M74 78l12 12-12 17-12-17Z" fill="#a0c7c2"/>',
+    cobrador:
+      '<path d="M19 29h58v10H19Zm10-21h38l5 21H24Z" fill="#444540"/><path d="M30 47h14v9H30Zm22 0h14v9H52Zm-8 4h8" fill="none" stroke="#d4bc81" stroke-width="2"/><rect x="60" y="79" width="25" height="29" rx="2" fill="#8b4f40"/><path d="M65 83v21m5-15h10m-10 6h10" stroke="#e0bf86"/>',
+    cinzas:
+      '<path d="M22 62V28q26-26 52 0v34l-9-28-17 5-17-5Z" fill="#827c78"/><path d="M33 63q15 12 30 0l-7 16H40Z" fill="#aea09a"/><path d="M66 102q-13-9 3-27l4 12 7-17q16 25 0 32Z" fill="#d17f45"/>',
+    astronomo:
+      '<path d="m15 37 19-30 14 12L63 4l19 33Z" fill="#52617d"/><path d="M27 43h42l-6 18H33Z" fill="#27364f"/><circle cx="48" cy="50" r="5" fill="#d4cd95"/><g fill="none" stroke="#bfaf7c"><circle cx="75" cy="91" r="14"/><ellipse cx="75" cy="91" rx="6" ry="14"/><path d="M61 91h28"/></g>',
+    rei: '<path d="m22 15 13 9L48 7l13 17 13-9-5 23H27Z" fill="#c9ad68"/><path d="M29 39h38v30L48 80 29 69Z" fill="#192523"/><path d="M48 39v34m-9-22h18" stroke="#6d7159"/><path d="M26 86l22 18 22-18" fill="none" stroke="#c9ad68" stroke-width="3"/>',
+  };
+  return `<svg class="boss-portrait" viewBox="0 0 96 120" role="img" aria-label="Retrato de ${esc(b.name)}"><path d="M4 118V103q5-25 30-28h28q25 3 30 28v15" fill="${b.identity === "rei" ? "#705246" : "#3a514c"}"/><path d="M35 68v13l13 13 13-13V68" fill="#b28b6b"/><ellipse cx="48" cy="46" rx="22" ry="29" fill="#c4a080"/><path d="M34 47h7m14 0h7m-18 15h9" stroke="#473b34" stroke-width="2" fill="none"/>${shapes[b.identity] || ""}</svg>`;
+}
+function renderPresence(b) {
+  const el = $("boss-presence");
+  el.hidden = !b.presence;
+  if (!b.presence) return;
+  el.dataset.mood = b.presence.mood;
+  el.dataset.boss = b.identity;
+  el.dataset.sister = b.active;
+  el.innerHTML = `${bossPortrait(b)}<div><span class="boss-object">${esc(b.presence.object)}${b.identity === "gemeas" ? ` · ${b.active === "a" ? "Íris" : "Véspera"}` : ""}${b.identity === "rei" ? ` · Ato ${b.act}` : ""}</span><p>“${esc(b.presence.speech)}”</p>${b.identity === "sinos" ? `<div class="bell-meter" aria-label="${b.bells} de 7 sinos">${Array.from({ length: 7 }, (_, i) => `<i class="${i < b.bells ? "lit" : ""}">♧</i>`).join("")}</div>` : ""}</div>`;
+}
+let soundEnabled = false,
+  soundContext = null;
+try {
+  soundEnabled = localStorage.getItem("count-queen-sound") === "on";
+} catch (_) {}
+function soundLabel() {
+  $("sound-button").textContent = soundEnabled
+    ? "Som: ligado"
+    : "Som: desligado";
+  $("sound-button").setAttribute("aria-pressed", String(soundEnabled));
+}
+soundLabel();
+function tone(frequency, delay = 0, duration = 0.12) {
+  if (!soundEnabled || !soundContext || soundContext.state !== "running")
+    return;
+  const time = soundContext.currentTime + delay,
+    oscillator = soundContext.createOscillator(),
+    gain = soundContext.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, time);
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(0.045, time + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  oscillator.connect(gain).connect(soundContext.destination);
+  oscillator.start(time);
+  oscillator.stop(time + duration + 0.02);
+  oscillator.onended = () => {
+    oscillator.disconnect();
+    gain.disconnect();
+  };
+}
+async function enableAudio() {
+  try {
+    soundContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    await soundContext.resume();
+  } catch (_) {
+    soundEnabled = false;
+    soundLabel();
+  }
+}
+$("sound-button").addEventListener("click", async () => {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled) await enableAudio();
+  try {
+    localStorage.setItem("count-queen-sound", soundEnabled ? "on" : "off");
+  } catch (_) {}
+  soundLabel();
+  tone(440);
+});
+document.addEventListener(
+  "pointerdown",
+  () => {
+    if (soundEnabled) enableAudio();
+  },
+  { once: true },
+);
+function playSound(previous) {
+  if (state.phase === "resultado" && previous.phase !== "resultado") {
+    const win = state.battle.result.score > 0;
+    tone(win ? 523 : 220, 0, 0.24);
+    tone(win ? 659 : 196, 0.12, 0.24);
+    tone(win ? 784 : 165, 0.24, 0.3);
+  } else if (
+    state.battle?.hands?.flatMap((h) => h.cards).length >
+    (previous.battle?.hands?.flatMap((h) => h.cards).length || 0)
+  )
+    tone(320, 0, 0.07);
+  if (
+    state.battle?.identity === "sinos" &&
+    state.battle.bells !== previous.battle?.bells
+  )
+    tone(880, 0.1, 0.65);
+}

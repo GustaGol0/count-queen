@@ -2,6 +2,13 @@
 
 ## Em desenvolvimento — Mesa Viva — 15/10/2026
 
+- Três origens desbloqueáveis além do Viajante: Herdeiro Arruinado, Exilada e Trapaceiro. Cada uma altera recursos, relíquia, baralho ou preço de loja; saves antigos continuam como Viajante.
+- Relíquias raras Bolso Falso, Balança do Carrasco e Última Palavra: guardar para a próxima rodada, transferir entre mãos divididas ou comprar após a revelação. Catálogo ampliado para 27 relíquias.
+- Efeitos ativados na mesa e destaque nas relíquias; recibo por mão com fontes do multiplicador, limite aplicado, lucro e retenções de dívida.
+- Retratos vetoriais e objetos dos sete bosses, falas de abertura e resultado, reação à dobra de Ferrugem/Frei, alternância das Gêmeas, medidor de sinos e cobrança familiar contextual. Som opcional desligado por padrão.
+- Três histórias em capítulos entre regiões. Escolhas persistem no diário, alteram recursos e recompensas e mudam o desfecho da mensageira após traição. A dívida familiar continua mesmo após abandonar a história.
+- Novos testes cobrem desbloqueios, saves antigos, conservação da carta guardada, transferências, última compra, interação de relíquias, cálculos e consequências. 200 jornadas completas alternando as quatro origens; teste adicional no navegador cobre as três relíquias, as origens, os sete retratos, traição persistente e preferência de som.
+
 - Números das cartas, fichas, apostas e placares em fonte limpa; valores grandes também no centro das cartas. Títulos e símbolos mantêm a identidade retrô, com bordas mais suaves.
 - Distribuição e compras deslizam da pilha até a mão. Carta oculta vira na revelação; cartas são recolhidas ao continuar; saldo, aposta e resultado recebem movimentos curtos.
 - Animações acompanham apenas ações confirmadas, não repetem ao recarregar e podem ser interrompidas pelo próximo comando. Movimento reduzido desativa os efeitos e limpa animações em andamento.
@@ -13,7 +20,7 @@
 - Cores da mesa acompanham a região. Contratos em pergaminho, revelações por raridade, tela cheia e movimento reduzido preservados.
 - Transições curtas entre telas; ações especiais de relíquias aparecem quando disponíveis.
 - Combate comum cabe em notebook de 1366 × 768; mãos longas e até quatro mãos divididas se reorganizam sem cortar cartas.
-- Validação: 93 testes de regras/persistência; verificação no Chromium de 16 estados, navegação pelos menus, bloqueio de atalhos em janelas, rodada completa e recarga do save. Aquisições nas quatro raridades e tela cheia também verificadas.
+- Validação: 112 testes de regras/persistência; verificação no Chromium de 16 estados, navegação pelos menus, bloqueio de atalhos em janelas, rodada completa e recarga do save. Aquisições nas quatro raridades e tela cheia também verificadas.
 - Verificação adicional de movimento: distribuição inicial, compra sem repetir cartas antigas, virada, recolhimento, resultado, recarga, comandos durante animações e mudança para movimento reduzido.
 
 ## 0.5.1 — Selos e Pergaminhos — 14/10/2026

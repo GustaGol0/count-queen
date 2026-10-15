@@ -86,7 +86,7 @@ def main():
                 assert any('motion-card' in c['cls'] for c in page.evaluate('motionCalls'))
                 # Changing the preference cancels active effects and removes clones.
                 with mesa.lock: mesa.game.restore(ready())
-                page.reload();expect(page.locator('#bet-form')).to_be_visible()
+                page.reload();page.wait_for_function('state?.phase==="aposta"');expect(page.locator('#bet-form')).to_be_visible()
                 page.evaluate("act('apostar', 10)")
                 page.emulate_media(reduced_motion='reduce')
                 page.wait_for_function('liveAnimations.size === 0 && motionLayers.size === 0')

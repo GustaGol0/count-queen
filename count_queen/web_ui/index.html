@@ -52,6 +52,9 @@
         </div>
       </div>
       <nav aria-label="Opções do jogo">
+        <button class="quiet" id="sound-button" aria-pressed="false">
+          Som: desligado
+        </button>
         <button class="quiet" id="fullscreen-button" aria-pressed="false">
           Tela cheia
         </button>
@@ -86,7 +89,8 @@
           aria-live="polite"
         ></section>
         <section id="battle-rules" class="battle-rules" hidden></section>
-        <div class="table" id="table">
+        <div class="table" id="table" hidden>
+          <aside id="boss-presence" class="boss-presence" hidden></aside>
           <div class="table-inlay" aria-hidden="true"></div>
           <button
             class="table-deck"
@@ -134,6 +138,7 @@
         <section
           class="control-panel"
           id="control-panel"
+          hidden
           aria-label="Ações da rodada"
         >
           <div class="status-row">
@@ -177,6 +182,11 @@
           </form>
           <div id="actions" class="actions" hidden></div>
           <div id="result" class="result" hidden aria-live="polite"></div>
+          <div id="effect-feed" class="effect-feed" hidden></div>
+          <details id="result-breakdown" hidden>
+            <summary>Como esta rodada foi calculada</summary>
+            <div id="calculation"></div>
+          </details>
           <div id="oracle" class="oracle" hidden></div>
           <div id="error" class="error" role="alert" hidden></div>
         </section>
@@ -213,7 +223,7 @@
       </div>
       <div class="eyebrow">BLACKJACK ROGUELITE</div>
       <h2>Count & Queen</h2>
-      <p>200 fichas. Um baralho. Quatro regiões até a coroa.</p>
+      <p>Uma origem. Um baralho. Quatro regiões até a coroa.</p>
       <form id="new-game-form">
         <label for="name">SEU NOME</label
         ><input
@@ -226,8 +236,12 @@
         /><label for="gender">SEUS TÍTULOS</label
         ><select id="gender">
           <option value="h">Plebeu → Rei</option>
-          <option value="m">Plebeia → Rainha</option></select
-        ><button class="primary" type="submit">
+          <option value="m">Plebeia → Rainha</option>
+        </select>
+        <fieldset id="origin-options" class="origin-options">
+          <legend>SUA ORIGEM</legend>
+        </fieldset>
+        <button class="primary" type="submit">
           Começar jornada <span>↗</span>
         </button>
         <p id="welcome-error" class="error" role="alert" hidden></p>

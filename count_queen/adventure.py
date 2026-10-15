@@ -10,7 +10,8 @@ from collections import Counter
 from pathlib import Path
 
 from .content import (REGIONS, SUITS, RANKS, RELICS, OATHS, MARKS, BOSSES,
-                      BOSS_PAIRS, ELITES, NODE_NAMES, CONTRACTS, CHARGES)
+                      BOSS_PAIRS, ELITES, NODE_NAMES, CONTRACTS, CHARGES, ORIGINS, BOSS_PRESENTATION)
+from . import stories
 
 
 def require(condition, message='Esta escolha não está disponível agora.'):
@@ -30,7 +31,7 @@ class Adventure:
     def __init__(self, seed=None):
         self.rng = random.Random(seed)
         self.s = {'versao': 2, 'revisao': 0, 'phase': 'inicio', 'player': None,
-                  'uid': 0, 'unlocks': [], 'legends': [], 'history': [], 'notice': ''}
+                  'uid': 0, 'unlocks': [], 'legends': [], 'history': [], 'notice': '', 'effects': [], 'new_unlocks': []}
 
     @property
     def p(self):
@@ -53,6 +54,28 @@ class Adventure:
         require(data.get('versao') == 2, 'Versão de jornada não suportada.')
         self.s = copy.deepcopy({k: v for k, v in data.items() if k != 'random'})
         self.rng.setstate(tuples(data['random']))
+        self.s.setdefault('effects', [])
+        self.s.setdefault('new_unlocks', [])
+        if self.p:
+            legacy='origem' not in self.p
+            for key, value in dict(origem='viajante', origin_debt=0., stories={}, story_log=[], reserved=None).items():
+                self.p.setdefault(key, value)
+            if legacy and self.p['stats']['splits']:
+                self.unlock('trapaceiro')
+            if legacy and (self.s.get('region', 0)>0 or any(x.get('vitoria') or x.get('regiao', 0)>1 for x in self.s['legends'])):
+                self.unlock('herdeiro')
+            if legacy and self.s['legends']:
+                self.unlock('exilada')
+
+    def unlock(self, origin):
+        key = 'origem_'+origin
+        if key not in self.s['unlocks']:
+            self.s['unlocks'].append(key)
+            self.s['new_unlocks'].append(origin)
+
+    def effect(self, source, text):
+        self.s['effects'].append({'source':source, 'text':text})
+        self.s['effects'] = self.s['effects'][-30:]
 
     def card(self, rank, suit=None, temporary=None):
         self.s['uid'] += 1
@@ -93,10 +116,11 @@ class Adventure:
         cid = deck['draw'].pop()
         return copy.deepcopy(deck['cards'][cid])
 
-    def new(self, name, gender):
+    def new(self, name, gender, origin='viajante'):
         require(self.s['phase'] in ('inicio', 'fim'), 'Termine a jornada atual antes de começar outra.')
         require(isinstance(name, str) and 1 <= len(name.strip()) <= 30, 'Use um nome de 1 a 30 caracteres.')
         require(gender in ('h', 'm'), 'Escolha os títulos do personagem.')
+        require(origin in ORIGINS and (origin=='viajante' or 'origem_'+origin in self.s['unlocks']), 'Origem ainda não desbloqueada.')
         self.s.update(phase='juramento', region=0, layer=-1, column=1, visited=[], history=[],
                       battle=None, round_count=0, notice='', result=None, choice=None,
                       boss_ids=[self.rng.choice(pair) for pair in BOSS_PAIRS], pending=None)
@@ -105,7 +129,16 @@ class Adventure:
                             'consagrado': None, 'afinidades': {}, 'ultima_aposta': 10,
                             'debt': 0., 'loan': 0., 'paid_debt': False, 'revived': False,
                             'stats': {'doubles': 0, 'splits': 0, 'long': 0, 'wins': {}},
-                            'deck': self.deck(), 'prepared': False}
+                            'deck': self.deck(), 'prepared': False, 'origem':origin,
+                            'origin_debt':0., 'stories':{}, 'story_log':[], 'reserved':None}
+        if origin=='herdeiro':
+            self.p.update(fichas=140., origin_debt=120., itens=['balanca_carrasco'])
+        elif origin=='exilada':
+            self.p.update(fichas=140., prepared=True, itens=['broche_prudencia'])
+            for card in self.p['deck']['cards'].values():
+                if card['valor']=='K': card['valor']='2'
+        elif origin=='trapaceiro':
+            self.p.update(fichas=160., caminho='tirania', itens=['bolso_falso'])
         if 'carta_real' in self.s['unlocks']:
             next(iter(self.p['deck']['cards'].values()))['marca'] = 'real'
         self.s['maps'] = [self.make_map(i) for i in range(4)]
@@ -170,10 +203,11 @@ class Adventure:
                (self.has('bussola_contrabandista') and not self.s['compass']))
 
     def interact(self, action, data):
+        self.s.update(effects=[], new_unlocks=[])
         phase = self.s['phase']
         value = data.get('valor')
         if action == 'nova':
-            return self.new(data.get('nome'), data.get('genero', 'h'))
+            return self.new(data.get('nome'), data.get('genero', 'h'), data.get('origem','viajante'))
         require(self.p is not None, 'Comece uma jornada.')
         if phase == 'juramento':
             require(action == 'juramento' and value in self.s['offers'])
@@ -249,12 +283,14 @@ class Adventure:
         else:
             self.s['phase'] = kind
             if kind == 'evento':
-                self.s['event'] = self.rng.choice(['ponte','biblioteca','audiencia'])
+                story = stories.select_story(self)
+                self.s['event'] = 'historia:'+story if story else self.rng.choice(['ponte','biblioteca','audiencia'])
                 if self.has('moeda_peregrino'):
                     self.p['fichas'] += 5
 
     def shop_price(self, key):
         price = RELICS[key]['preco'] * (1 + .15 * self.s['region'])
+        if self.p['origem']=='trapaceiro': price *= 1.15
         if self.oath('estrada', True):
             price *= 1.2
         if self.has('selo_mercador') and not self.s['shop']['bought']:
@@ -316,6 +352,7 @@ class Adventure:
             self.add_card(data['valor'])
         else:
             cid = data.get('carta')
+            require(cid != self.p['reserved'], 'A carta guardada deve ser jogada antes de ser alterada.')
             require(isinstance(cid, str) and cid in deck['cards'] and not deck['cards'][cid]['temporaria'],
                     'Escolha uma carta permanente do seu baralho.')
             if action == 'remover':
@@ -333,6 +370,8 @@ class Adventure:
 
     def story_options(self):
         phase = self.s['phase']
+        if phase=='evento' and self.s['event'].startswith('historia:'):
+            return [(o['id'],o['nome'],o['descricao']) for o in stories.scene(self)['options']]
         if phase == 'refugio':
             return [('reserva','Reserva da estrada','Receba 35 fichas.'),
                     ('purificar','Lavar a maldição','Remove todas as marcas malditas do seu baralho.'),
@@ -356,6 +395,10 @@ class Adventure:
 
     def story_action(self, action, value):
         require(action == 'escolha' and value in [o[0] for o in self.story_options()])
+        if self.s['phase']=='evento' and self.s['event'].startswith('historia:'):
+            stories.resolve(self, value)
+            self.bankrupt()
+            return
         if value in ('pacto','caridade','pagar','estudar'):
             cost = {'pacto':30,'caridade':20,'pagar':15,'estudar':20}[value]
             require(self.p['fichas'] >= cost, f'Você precisa de {cost} fichas.')
@@ -502,6 +545,8 @@ class Adventure:
             return ['escolher']
         if phase=='revelacao':
             return ['liquidar','cetro']
+        if phase=='ultima_palavra':
+            return ['comprar_final','aceitar_resultado']
         if phase=='resultado':
             return ['continuar']
         if phase!='jogando':
@@ -509,17 +554,25 @@ class Adventure:
         b=self.b
         h=b['hands'][b['current']]
         a=['parar']
+        if (self.has('bolso_falso') and 'pocket' not in b['used'] and not self.p['reserved']
+                and h['hits']>0 and len(h['cards'])>2 and not h['double'] and not b['peeked']
+                and not h['cards'][-1]['temporaria'] and h['cards'][-1]['id'] in self.p['deck']['cards']):
+            a.append('guardar')
+        if (self.has('balanca_carrasco') and 'balance' not in b['used'] and h.get('split')
+                and h['hits']==0 and len(h['cards'])>=2 and not b['peeked'] and not h['double']
+                and b['current']+1<len(b['hands'])):
+            a.append('transferir')
         can_hit=b['contract']!='curta' or h['hits']<2
         can_hit = can_hit and bool(self.p['deck']['draw'] or self.p['deck']['discard'])
         if can_hit and self.total(h)<b['limit'] and b.get('peek_mode')!='stop':
             a.append('pedir')
         two=len(h['cards'])==2
-        if two and not b['peeked'] and b['contract']!='firme' and b['identity']!='escrivao' and can_hit and self.p['fichas']>=self.double_cost(h):
+        if two and h['hits']==0 and not b['peeked'] and b['contract']!='firme' and b['identity']!='escrivao' and can_hit and self.p['fichas']>=self.double_cost(h):
             a.append('dobrar')
         equal=two and h['cards'][0]['valor']==h['cards'][1]['valor']
         impersonate=two and self.has('mascara_impostor') and 'mask' not in b['used'] and points(h['cards'][0]['valor'])==points(h['cards'][1]['valor'])
         free='split' in b['round_used'] and self.has('joias_gemeas')
-        if (equal or impersonate) and not self.oath('lamina',True) and b['contract']!='individual' and not b['peeked'] and len(b['hands'])<4 and (free or self.p['fichas']>=h['bet']):
+        if (equal or impersonate) and h['hits']==0 and not self.oath('lamina',True) and b['contract']!='individual' and not b['peeked'] and len(b['hands'])<4 and (free or self.p['fichas']>=h['bet']):
             a.append('dividir')
         first=two and h['hits']==0 and len(b['hands'])==1 and not b['peeked']
         if first and b['contract']!='testemunhas' and not self.oath('honra',True) and not (b['all_in'] and self.oath('ultima',True)):
@@ -588,6 +641,7 @@ class Adventure:
                 self.s['phase']='aposta'
             return
         require(action in self.available())
+        b['last_action']=action
         if action=='apostar':
             self.start_round(value)
         elif action in ('segurar','recusar_seguro'):
@@ -609,17 +663,45 @@ class Adventure:
             else:
                 self.after_round()
         elif action=='liquidar':
-            self.settle()
+            self.offer_last_word()
         elif action=='cetro':
             b['used'].append('scepter')
             deck=b['decks'][b['active']]
             if deck['draw'] or deck['discard']:
                 b['dealer'].append(self.draw(deck))
-            self.settle()
+            self.offer_last_word()
+        elif action in ('comprar_final','aceitar_resultado'):
+            if action=='comprar_final':
+                b['used'].append('last_word')
+                b['current']=0
+                h=b['hands'][0]
+                h['cards'].append(self.player_card(self.draw(self.p['deck'])))
+                h['hits']+=1
+                h['no_natural']=True
+                self.effect('ultima_palavra','Uma última carta, com o rival já revelado.')
+                self.after_hit('ultima')
+            else:
+                self.settle()
         else:
             h=b['hands'][b['current']]
             if action=='parar':
                 self.advance()
+            elif action=='guardar':
+                self.p['reserved']=h['cards'].pop()['id']
+                h['no_natural']=True
+                b['used'].append('pocket')
+                self.effect('bolso_falso','Última carta guardada para abrir a próxima rodada.')
+            elif action=='transferir':
+                target=data.get('destino')
+                require(type(target) is int and b['current']<target<len(b['hands']), 'Escolha uma mão ainda não jogada.')
+                card=next((c for c in h['cards'] if c['id']==data.get('carta')),None)
+                require(card is not None, 'Escolha uma carta desta mão.')
+                h['cards'].remove(card)
+                h['no_natural']=True
+                b['hands'][target]['cards'].append(card)
+                b['hands'][target]['no_natural']=True
+                b['used'].append('balance')
+                self.effect('balanca_carrasco',f'Carta transferida para a mão {target+1}.')
             elif action=='desistir':
                 h['surrender']=True
                 self.p['fichas']+=h['bet']/2
@@ -634,6 +716,7 @@ class Adventure:
                     self.p['fichas']-=h['bet']
                 b['round_used'].append('split')
                 self.p['stats']['splits']+=1
+                self.unlock('trapaceiro')
                 new={'cards':[h['cards'].pop()], 'bet':h['bet'], 'split':True, 'hits':0, 'double':False}
                 h.update(split=True, no_natural=True)
                 b['hands'].append(new)
@@ -688,13 +771,21 @@ class Adventure:
                  all_in=bet==math.floor(self.p['fichas']), peek=None, seven_changed=False, figure_changed=False)
         if self.has('manto_nobreza'):
             self.p['fichas']+=5*(min(4,self.p['prestigio']//20)+1)
+            self.effect('manto_nobreza',f"+{5*(min(4,self.p['prestigio']//20)+1)} fichas antes da aposta.")
         self.p['ultima_aposta']=bet
         self.p['fichas']-=bet
         h={'cards':[], 'bet':bet, 'split':False, 'hits':0, 'double':False}
         b['hands']=[h]
         rival=b['decks'][b['active']]
         for _ in range(2):
-            h['cards'].append(self.player_card(self.draw(self.p['deck'])))
+            if self.p['reserved'] and not h['cards']:
+                card=copy.deepcopy(self.p['deck']['cards'][self.p['reserved']])
+                self.p['reserved']=None
+                h['no_natural']=True
+                self.effect('bolso_falso','A carta guardada abriu esta mão. Sem blackjack natural.')
+            else:
+                card=self.draw(self.p['deck'])
+            h['cards'].append(self.player_card(card))
             if b['preview']:
                 b['dealer'].append(b['preview'])
                 b['preview']=None
@@ -740,6 +831,7 @@ class Adventure:
             self.replenish(self.p['deck'],3)
             b['choices']=[copy.deepcopy(self.p['deck']['cards'][cid]) for cid in self.p['deck']['draw'][-3:]]
             if b['choices']:
+                self.effect('caleidoscopio_acaso','Escolha uma das próximas cartas do seu baralho.')
                 b['round_used'].append('oracle')
                 b['pending_action']=action
                 self.s['phase']='oraculo'
@@ -756,11 +848,16 @@ class Adventure:
         if value==22 and value>b['limit'] and self.has('coroa_22') and 'crown22' not in b['used']:
             h['adjust']=1
             b['used'].append('crown22')
+            self.effect('coroa_22','22 se tornou 21.')
         if self.total(h)>b['limit'] and action!='dobrar' and self.has('tesoura_destino') and 'scissors' not in b['used']:
             c=h['cards'].pop()
             self.discard_card(c)
             b['used'].append('scissors')
-            self.advance()
+            self.effect('tesoura_destino','A carta que estourou foi descartada.')
+            self.settle() if action=='ultima' else self.advance()
+            return
+        if action=='ultima':
+            self.settle()
             return
         if action=='dobrar' or self.total(h)>=b['limit'] or (b['contract']=='curta' and h['hits']>=2):
             self.advance()
@@ -791,32 +888,56 @@ class Adventure:
         if self.has('cetro_sentencas') and 'scepter' not in b['used'] and not self.natural(b['dealer']) and any(self.total(h)<=b['limit'] and not h.get('surrender') for h in b['hands']):
             self.s['phase']='revelacao'
         else:
+            self.offer_last_word()
+
+    def offer_last_word(self):
+        b=self.b
+        h=b['hands'][0]
+        if (self.has('ultima_palavra') and 'last_word' not in b['used'] and len(b['hands'])==1
+                and not h['double'] and not h.get('surrender') and not self.natural(h)
+                and self.total(h)<b['limit'] and not self.natural(b['dealer'])
+                and (b['contract']!='curta' or h['hits']<2)
+                and (self.p['deck']['draw'] or self.p['deck']['discard'])):
+            self.s['phase']='ultima_palavra'
+        else:
             self.settle()
 
     def multiplier(self, hand):
+        return max(.1,min(3,1+sum(p['amount'] for p in self.multiplier_parts(hand))))
+
+    def multiplier_parts(self, hand):
         ranks=[c['valor'] for c in hand['cards']]
         v=self.total(hand)
-        bonus=1+.15*min(5,max((self.p['afinidades'].get(r,0) for r in ranks),default=0))
-        bonus+=.2 if self.has('broche_prudencia') and v==17 else 0
-        bonus+=.75 if self.has('forca_sete') and '7' in ranks else 0
-        bonus+=.25*max(0,len({c['naipe'] for c in hand['cards'] if c['naipe']!='Sem naipe'})-1) if self.has('bencao_reinos_v2') else 0
-        bonus+=.4 if self.has('rosario_humildes') and not set(ranks)&{'A','J','Q','K'} else 0
-        bonus+=.25 if self.oath('fortuna') else 0
-        bonus-=.2 if self.oath('gloria',True) else 0
-        bonus+=.6 if self.oath('dobrar') and hand['double'] else 0
-        bonus+=.35 if self.oath('lamina') and len(ranks)==2 else 0
-        bonus+=1 if self.oath('quinta') and len(ranks)>=5 else 0
-        bonus-=.2 if self.oath('quinta',True) and len(ranks)==2 else 0
-        bonus+=.5 if self.oath('sete') and '7' in ranks else 0
+        parts=[]
+        def add(source, amount):
+            if amount: parts.append({'source':source, 'amount':round(amount,4)})
+        add('afinidade',.15*min(5,max((self.p['afinidades'].get(r,0) for r in ranks),default=0)))
+        add('broche_prudencia', (.2 if self.has('broche_prudencia') and v==17 else 0))
+        add('forca_sete', (.75 if self.has('forca_sete') and '7' in ranks else 0))
+        add('bencao_reinos_v2', (.25*max(0,len({c['naipe'] for c in hand['cards'] if c['naipe']!='Sem naipe'})-1) if self.has('bencao_reinos_v2') else 0))
+        add('rosario_humildes', (.4 if self.has('rosario_humildes') and not set(ranks)&{'A','J','Q','K'} else 0))
+        add('fortuna', (.25 if self.oath('fortuna') else 0))
+        add('gloria', -(.2 if self.oath('gloria',True) else 0))
+        add('dobrar', (.6 if self.oath('dobrar') and hand['double'] else 0))
+        add('lamina', (.35 if self.oath('lamina') and len(ranks)==2 else 0))
+        add('quinta', (1 if self.oath('quinta') and len(ranks)>=5 else 0))
+        add('quinta', -(.2 if self.oath('quinta',True) and len(ranks)==2 else 0))
+        add('sete', (.5 if self.oath('sete') and '7' in ranks else 0))
         if self.oath('humilde'):
-            bonus+=.45 if not set(ranks)&{'J','Q','K'} else -.25 if self.oath('humilde',True) else 0
-        bonus-=.2 if self.oath('cacador',True) and self.b['kind']=='mesa' else 0
-        bonus+=1 if self.oath('ultima') and self.b['all_in'] else 0
-        bonus+=.25 if self.b['contract']=='individual' or self.b['identity']=='escrivao' else 0
-        bonus+=sum(.3 if c['marca']=='quebradica' else .6 if c['marca']=='maldita' else 0 for c in hand['cards'])
-        return max(.1,min(3,bonus))
+            add('humilde', (.45 if not set(ranks)&{'J','Q','K'} else -.25 if self.oath('humilde',True) else 0))
+        add('cacador', -(.2 if self.oath('cacador',True) and self.b['kind']=='mesa' else 0))
+        add('ultima', (1 if self.oath('ultima') and self.b['all_in'] else 0))
+        add('contrato', (.25 if self.b['contract']=='individual' or self.b['identity']=='escrivao' else 0))
+        add('marcas', (sum(.3 if c['marca']=='quebradica' else .6 if c['marca']=='maldita' else 0 for c in hand['cards'])))
+        return parts
 
     def receive_profit(self, profit):
+        paid_origin=min(self.p['origin_debt'],round(profit*.25,2))
+        self.p['origin_debt']=round(self.p['origin_debt']-paid_origin,2)
+        profit-=paid_origin
+        if paid_origin:
+            self.effect('credor',f'{paid_origin:g} fichas pagaram a dívida familiar.')
+        payment=0
         if self.p['debt']:
             payment=min(self.p['debt'],round(profit/2,2))
             self.p['debt']=round(self.p['debt']-payment,2)
@@ -824,6 +945,7 @@ class Adventure:
             if not self.p['debt']:
                 self.p['paid_debt']=True
         self.p['fichas']+=profit
+        return {'family':paid_origin, 'oath':payment, 'received':profit}
 
     def settle(self):
         b=self.b
@@ -832,6 +954,9 @@ class Adventure:
         dealer=self.total(b['dealer'])
         natural=self.natural(b['dealer'])
         for h in b['hands']:
+            hand_start=self.p['fichas']
+            profit=0
+            payments={'family':0,'oath':0,'received':0}
             v=self.total(h)
             if h.get('surrender') or v>b['limit']:
                 outcome=-1
@@ -855,7 +980,9 @@ class Adventure:
                 if b['charge']=='fortuna':
                     profit=round(profit*.9,2)
                 self.p['fichas']+=h['bet']
-                self.receive_profit(profit)
+                payments=self.receive_profit(profit)
+                for part in self.multiplier_parts(h):
+                    self.effect(part['source'], f"{part['amount']:+.0%} no lucro desta mão.")
                 if h['double']:
                     b['double_win']=True
                 if len(h['cards'])>=5:
@@ -864,8 +991,10 @@ class Adventure:
                     self.p['stats']['wins'][c['valor']]=self.p['stats']['wins'].get(c['valor'],0)+1
                     if c['marca']=='real':
                         self.prestige(1)
+                        self.effect('marcas','Carta Real: prestígio recebido.')
                     if c['marca']=='dourada' or c['temporaria']=='brasa':
                         self.p['fichas']+=5
+                        self.effect('marcas','Carta Dourada ou Brasa: +5 fichas.')
                     if c['marca']=='quebradica':
                         c['destroy']=True
                 if b['contract']=='curta' and self.natural(h):
@@ -875,10 +1004,12 @@ class Adventure:
                 if self.has('ficha_cobre') and 'copper' not in b['used']:
                     self.p['fichas']+=5
                     b['used'].append('copper')
+                    self.effect('ficha_cobre','Empate: +5 fichas.')
             else:
                 if v>b['limit'] and self.has('dedal_costureira') and 'thimble' not in b['used']:
                     self.p['fichas']+=round(h['bet']*.1,2)
                     b['used'].append('thimble')
+                    self.effect('dedal_costureira',f"Estouro: {round(h['bet']*.1,2):g} fichas devolvidas.")
                 if self.oath('dobrar',True) and h['double']:
                     self.prestige(-2)
                 if self.oath('sete',True) and any(c['valor']=='7' for c in h['cards']):
@@ -888,6 +1019,9 @@ class Adventure:
                 self.p['fichas']=max(0,self.p['fichas']-5*sum(c['marca']=='maldita' for c in h['cards']))
             score+=outcome
             results.append({'texto':'Desistência' if h.get('surrender') else 'Estourou' if v>b['limit'] else 'Blackjack!' if outcome>0 and self.natural(h) else 'Vitória' if outcome>0 else 'Derrota' if outcome<0 else 'Empate', 'resultado':outcome,'bonus':round(multiplier,2)})
+            results[-1]['calculation']={'bet':h['bet'], 'natural':self.natural(h), 'parts':self.multiplier_parts(h),
+                'multiplier':multiplier, 'profit':profit, 'payments':payments,
+                'credited':round(self.p['fichas']-hand_start,2), 'applied':outcome>0}
         if score>0:
             b['wins']+=2 if b['contract']=='curta' and any(self.natural(h) and r['resultado']>0 for h,r in zip(b['hands'],results)) else 1
             b['draws']=0
@@ -995,6 +1129,7 @@ class Adventure:
         b=self.b
         boss=b['kind']=='boss'
         if won:
+            self.unlock('herdeiro')
             amount={'mesa':3,'elite':7,'boss':12}[b['kind']]
             if b['double_win'] and self.has('luvas_duelista'):
                 amount*=1.3
@@ -1027,6 +1162,7 @@ class Adventure:
         self.s['phase']='conclusao'
 
     def finish(self, won, reason):
+        self.unlock('exilada')
         self.s.update(phase='fim', epilogue=reason, victory=won)
         if won:
             if 'carta_real' not in self.s['unlocks']:
@@ -1051,7 +1187,8 @@ class Adventure:
     def public(self):
         s=self.s
         out={k:copy.deepcopy(s.get(k)) for k in ('versao','revisao','phase','region','layer','column','visited','notice','round_count','history','result','epilogue','victory','legends','unlocks')}
-        out.update(regions=REGIONS, catalog={'relics':RELICS,'oaths':OATHS,'marks':MARKS}, player=None)
+        out.update(regions=REGIONS, catalog={'relics':RELICS,'oaths':OATHS,'marks':MARKS,'origins':ORIGINS}, player=None,
+                   effects=copy.deepcopy(s['effects']), new_unlocks=s['new_unlocks'][:])
         if not self.p:
             return out
         p=self.p
@@ -1076,6 +1213,9 @@ class Adventure:
         if phase in ('evento','refugio','sacrario'):
             out['options']=[{'id':k,'nome':n,'descricao':d} for k,n,d in self.story_options()]
             out['event']=s.get('event')
+            if phase=='evento' and s['event'].startswith('historia:'):
+                out['story']=stories.scene(self)
+                out['options']=out['story']['options']
         if phase=='loja':
             out['shop']={**copy.deepcopy(s['shop']), 'prices':{k:self.shop_price(k) for k in s['shop']['offers']},
                          'credit':self.has('ampulheta_usurario') and not p['loan'] and not s['shop']['loan_used'] and s['region']<3}
@@ -1083,6 +1223,14 @@ class Adventure:
             b=self.b
             visible={k:copy.deepcopy(v) for k,v in b.items() if k not in ('decks','dealer','preview','choices','hands')}
             visible['name']=self.enemy_name()
+            if b['identity'] in BOSS_PRESENTATION:
+                presence=copy.deepcopy(BOSS_PRESENTATION[b['identity']])
+                mood='win' if b.get('result') and b['result']['score']>0 else 'loss' if b.get('result') and b['result']['score']<0 else 'double' if b.get('last_action')=='dobrar' and 'double' in presence else 'intro'
+                presence['speech']=presence[mood]
+                presence['mood']=mood
+                if b['identity']=='cobrador' and p['origin_debt'] and mood=='intro':
+                    presence['speech']=f"Sua família ainda me deve {p['origin_debt']:g} fichas."
+                visible['presence']=presence
             visible['charge_descriptions']=CHARGES
             visible['description']=BOSSES.get(b['identity'],ELITES.get(b['identity'],{'descricao':'Até três rodadas; vença duas. O adversário para em 17.'}))['descricao']
             visible['hands']=[{**copy.deepcopy(h),'total':self.total(h),'natural':self.natural(h)} for h in b['hands']]

@@ -1,7 +1,7 @@
 # 🎴 Count & Queen — A Estrada da Coroa
 
 Um blackjack roguelite de fantasia medieval. Escolha caminhos em quatro regiões,
-modifique seu próprio baralho, combine 24 relíquias com 12 juramentos e desafie
+modifique seu próprio baralho, combine 27 relíquias com 12 juramentos e desafie
 sete bosses — até o Rei Sem Rosto, que responde à história da sua jornada.
 
 **Próxima atualização — Mesa Viva:** mesa em tela ampla, recursos compactos,
@@ -11,6 +11,25 @@ e o [catálogo de relíquias, juramentos e bosses](CATALOGO.md).
 Valores das cartas e recursos usam números nítidos. Distribuição, compra,
 revelação e recolhimento têm animações suaves, respeitando a preferência por
 movimento reduzido do sistema. Os comandos continuam disponíveis durante os efeitos.
+
+Além do Viajante, três origens são desbloqueadas ao jogar: Herdeiro Arruinado
+(vença um encontro), Exilada (termine uma jornada) e Trapaceiro (divida uma mão).
+A tela inicial mostra o baralho, a relíquia e o custo de cada origem. A origem é
+escolhida para uma nova jornada; o save atual continua com seus recursos.
+
+Os sete bosses têm retratos, objetos e falas que reagem ao duelo. O Cobrador
+reconhece sua dívida familiar, as Gêmeas alternam sua presença e o Frei mostra
+os sete sinos. O som é opcional, desligado por padrão, e pode ser ativado no topo.
+
+Bolso Falso, Balança do Carrasco e Última Palavra adicionam decisões durante a
+rodada. Os botões aparecem quando as regras permitem usá-los. Os efeitos ativados
+ficam registrados junto às ações; abra **Como esta rodada foi calculada** para
+ver bônus, limite do multiplicador, lucro, dívidas e fichas creditadas por mão.
+
+Lia, Baltasar e a mensageira podem reaparecer em regiões posteriores. Custos e
+consequências são mostrados antes de escolher, e **Sua jornada** guarda o registro.
+O desfecho da mensageira depende de proteger ou vender sua informação. Recusar
+um encontro encerra essa história, sem perdoar dívidas existentes.
 
 ## Jogar
 
@@ -45,7 +64,7 @@ não há contas, multiplayer ou hospedagem pública automática.
 
 ## A jornada
 
-Você começa com 200 fichas e 52 cartas tradicionais. Seu adversário compra de outro
+A origem Viajante começa com 200 fichas e 52 cartas tradicionais. Seu adversário compra de outro
 baralho. As cartas usadas vão para o descarte e a composição permanece entre
 rodadas e encontros. Quando a pilha está curta, o descarte volta e é embaralhado;
 nenhuma carta em uma mão volta à pilha durante a rodada.
@@ -106,7 +125,7 @@ encontros vencidos; perdas de mãos só custam prestígio quando um efeito expl�
 
 ## Baralho, relíquias e juramentos
 
-- Quatro raridades, com seis relíquias cada: comum, incomum, raro e mítico.
+- Quatro raridades: seis comuns, seis incomuns, nove raras e seis míticas.
 - Míticas só aparecem em recompensas de bosses; nunca nas lojas.
 - Escolha até três opções de recompensa (quatro em elites com Caçador de Coroas),
   excluindo relíquias já possuídas. Se a categoria acabar, recebe 25 fichas extras.
@@ -173,12 +192,14 @@ python -m unittest discover -s tests -v
 python tools/playthrough_adventure.py 200
 ```
 
-O playtest automatiza decisões em jornadas completas e verifica retomadas periódicas
+O playtest alterna as quatro origens, automatiza decisões em jornadas completas e verifica retomadas periódicas
 por JSON. Ele não lê nem grava o save pessoal e não representa uma estratégia ótima.
 Para QA visual opcional, com Playwright e Chromium já instalados:
 
 ```bash
 python tools/check_adventure_ui.py
+python tools/check_table_motion.py
+python tools/check_journey_expansion.py
 ```
 
 A ferramenta usa saves temporários e informa a pasta das capturas de tela.
