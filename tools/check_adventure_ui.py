@@ -77,7 +77,7 @@ def main():
                 cases['mao-longa']=g.export()
                 g=sample();g.s.update(region=3,king_style='dobras',king_face='7');g.start_battle('boss','rei');g.b.update(act=2);g.s.update(phase='cobranca_real',offers=['dobrar','sete']);cases['cobranca-real']=g.export()
                 g.s['phase']='consagrar';cases['consagrar']=g.export()
-                g.s['phase']='destino';cases['destino']=g.export()
+                g.b['act']=3;g.s['phase']='destino';cases['destino']=g.export()
                 g.s['phase']='pedagio';cases['pedagio']=g.export()
                 g=sample();g.start_battle('boss','cinzas');g.end_encounter(False);cases['revanche']=g.export()
                 g=sample();g.finish(False,'Uma nova lenda espera.');cases['fim']=g.export()
