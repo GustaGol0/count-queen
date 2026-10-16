@@ -6,6 +6,8 @@
     <meta name="theme-color" content="#101b17" />
     <title>Count & Queen — A caminho da coroa</title>
     <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/atelier.css" />
+    <link rel="preload" href="/portraits-atlas.png" as="image" />
     <script src="/app.js" defer></script>
   </head>
   <body>
@@ -92,6 +94,9 @@
         <div class="table" id="table" hidden>
           <aside id="boss-presence" class="boss-presence" hidden></aside>
           <div class="table-inlay" aria-hidden="true"></div>
+          <div class="table-atmosphere" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </div>
           <button
             class="table-deck"
             id="table-deck-button"

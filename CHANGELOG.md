@@ -2,14 +2,17 @@
 
 ## Em desenvolvimento — Mesa Viva — 15/10/2026
 
+- Nova apresentação ilustrada: nove retratos em um atlas local, incluindo as duas Gêmeas e uma adversária das mesas comuns. Traços expressivos, molduras de latão, feltro texturizado, cartas de papel e títulos em fonte serifada.
+- Distribuição alternada entre jogador e rival, fichas animadas na aposta e no resultado, reação do retrato e brilho breve de vitória. O som do resultado acompanha a revelação. Efeitos são interrompidos com o próximo comando e respeitam movimento reduzido.
+- Retratos também aparecem na apresentação do boss, no mapa e nos encontros. Verificação no Chromium cobre carregamento da arte, preservação do retrato entre jogadas, limpeza dos efeitos, recarga sem repetição e larguras de 320 a 1440 px.
 - Três origens desbloqueáveis além do Viajante: Herdeiro Arruinado, Exilada e Trapaceiro. Cada uma altera recursos, relíquia, baralho ou preço de loja; saves antigos continuam como Viajante.
 - Relíquias raras Bolso Falso, Balança do Carrasco e Última Palavra: guardar para a próxima rodada, transferir entre mãos divididas ou comprar após a revelação. Catálogo ampliado para 27 relíquias.
 - Efeitos ativados na mesa e destaque nas relíquias; recibo por mão com fontes do multiplicador, limite aplicado, lucro e retenções de dívida.
-- Retratos vetoriais e objetos dos sete bosses, falas de abertura e resultado, reação à dobra de Ferrugem/Frei, alternância das Gêmeas, medidor de sinos e cobrança familiar contextual. Som opcional desligado por padrão.
+- Retratos e objetos dos sete bosses, falas de abertura e resultado, reação à dobra de Ferrugem/Frei, alternância das Gêmeas, medidor de sinos e cobrança familiar contextual. Som opcional desligado por padrão.
 - Três histórias em capítulos entre regiões. Escolhas persistem no diário, alteram recursos e recompensas e mudam o desfecho da mensageira após traição. A dívida familiar continua mesmo após abandonar a história.
 - Novos testes cobrem desbloqueios, saves antigos, conservação da carta guardada, transferências, última compra, interação de relíquias, cálculos e consequências. 200 jornadas completas alternando as quatro origens; teste adicional no navegador cobre as três relíquias, as origens, os sete retratos, traição persistente e preferência de som.
 
-- Números das cartas, fichas, apostas e placares em fonte limpa; valores grandes também no centro das cartas. Títulos e símbolos mantêm a identidade retrô, com bordas mais suaves.
+- Números das cartas, fichas, apostas e placares em fonte limpa; valores grandes também no centro das cartas. Símbolos preservam a identidade do jogo, com bordas mais suaves.
 - Distribuição e compras deslizam da pilha até a mão. Carta oculta vira na revelação; cartas são recolhidas ao continuar; saldo, aposta e resultado recebem movimentos curtos.
 - Animações acompanham apenas ações confirmadas, não repetem ao recarregar e podem ser interrompidas pelo próximo comando. Movimento reduzido desativa os efeitos e limpa animações em andamento.
 - Mesa de combate ocupa a área central, com cartas maiores, aposta sobre o feltro e ações junto à mão do jogador.

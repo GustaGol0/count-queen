@@ -190,9 +190,11 @@ def criar_servidor(mesa, host='127.0.0.1', port=8000):
                 self.responder(200, {'versao': digest.hexdigest()})
             elif caminho == '/pixel.ttf':
                 self.responder(200, (STATIC / 'pixel.ttf').read_bytes(), 'font/ttf')
-            elif caminho in ('/', '/app.js', '/style.css'):
+            elif caminho == '/portraits-atlas.png':
+                self.responder(200, (STATIC / 'portraits-atlas.png').read_bytes(), 'image/png')
+            elif caminho in ('/', '/app.js', '/style.css', '/atelier.css'):
                 nome, tipo = {'/': ('index.html', 'text/html'), '/app.js': ('app.js', 'text/javascript'),
-                              '/style.css': ('style.css', 'text/css')}[caminho]
+                              '/style.css': ('style.css', 'text/css'), '/atelier.css': ('atelier.css', 'text/css')}[caminho]
                 self.responder(200, (STATIC / nome).read_bytes(), tipo + '; charset=utf-8')
             else:
                 self.responder(404, {'erro': 'Página não encontrada.'})

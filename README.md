@@ -4,13 +4,19 @@ Um blackjack roguelite de fantasia medieval. Escolha caminhos em quatro regiões
 modifique seu próprio baralho, combine 27 relíquias com 12 juramentos e desafie
 sete bosses — até o Rei Sem Rosto, que responde à história da sua jornada.
 
-**Próxima atualização — Mesa Viva:** mesa em tela ampla, recursos compactos,
+**Próxima atualização — Mesa Viva:** retratos de fantasia ilustrada, feltro com
+acabamento em latão, cartas de papel e fichas animadas. Mesa em tela ampla,
 menus sob demanda e mapa horizontal no computador. Leia os [patchnotes](CHANGELOG.md)
 e o [catálogo de relíquias, juramentos e bosses](CATALOGO.md).
 
 Valores das cartas e recursos usam números nítidos. Distribuição, compra,
 revelação e recolhimento têm animações suaves, respeitando a preferência por
 movimento reduzido do sistema. Os comandos continuam disponíveis durante os efeitos.
+
+As cartas são distribuídas alternadamente entre jogador e rival. Fichas viajam
+até a aposta e retornam ao saldo no resultado; vitórias recebem um brilho breve
+e os retratos reagem ao duelo. A [direção de arte](ART-DIRECTION.md) registra
+a origem da ilustração e o prompt usado.
 
 Além do Viajante, três origens são desbloqueadas ao jogar: Herdeiro Arruinado
 (vença um encontro), Exilada (termine uma jornada) e Trapaceiro (divida uma mão).

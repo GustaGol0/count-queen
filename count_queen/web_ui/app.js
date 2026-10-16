@@ -148,7 +148,22 @@ function playTableMotion(previous, snapshots) {
         );
       });
   }
-  for (const node of document.querySelectorAll("#table .card:not(.ghost)")) {
+  let dealingNodes = [...document.querySelectorAll("#table .card:not(.ghost)")];
+  if (freshRound) {
+    const own = [
+      ...document.querySelectorAll("#player-hands .card:not(.ghost)"),
+    ];
+    const rival = [
+      ...document.querySelectorAll("#dealer-cards .card:not(.ghost)"),
+    ];
+    dealingNodes = Array.from(
+      { length: Math.max(own.length, rival.length) },
+      (_, i) => [own[i], rival[i]],
+    )
+      .flat()
+      .filter(Boolean);
+  }
+  for (const node of dealingNodes) {
     const target = node.getBoundingClientRect();
     if (!target.width) continue;
     const index = freshRound
@@ -209,24 +224,29 @@ function playTableMotion(previous, snapshots) {
     } else {
       const dx = (deck.width ? deck.x : table.right - 45) - target.x;
       const dy = (deck.width ? deck.y : table.top + 30) - target.y;
-      const delay = sequence++ * 90;
+      const delay = sequence++ * 115;
       tween(
         node,
         [
           {
             opacity: 0,
-            transform: `translate(${dx}px,${dy}px) rotate(12deg) scale(.65)`,
+            transform: `translate(${dx}px,${dy}px) rotate(-14deg) scale(.78)`,
           },
           {
             opacity: 1,
-            transform: "translate(0,0) rotate(-2deg) scale(1.03)",
+            transform: "translate(0,-5px) rotate(2deg) scale(1.025)",
             offset: 0.82,
           },
           { opacity: 1, transform: "none" },
         ],
-        { duration: 440, delay, fill: "backwards" },
+        {
+          duration: 520,
+          delay,
+          fill: "backwards",
+          easing: "cubic-bezier(.18,.72,.23,1)",
+        },
       );
-      finishAt = Math.max(finishAt, delay + 440);
+      finishAt = Math.max(finishAt, delay + 520);
     }
   }
   if (sequence)
@@ -240,6 +260,7 @@ function playTableMotion(previous, snapshots) {
       { duration: 400 },
     );
   if (state.phase === "resultado" && previous?.phase !== "resultado") {
+    resultAtmosphere(finishAt);
     tween(
       $("result"),
       [
@@ -266,7 +287,8 @@ function playTableMotion(previous, snapshots) {
   }
   const oldBet = previous?.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
   const newBet = state.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
-  if (newBet > oldBet && !$("table-bet").hidden)
+  if (newBet > oldBet && !$("table-bet").hidden) {
+    flyChips($("balance"), $("table-bet"), 4, 0);
     tween(
       $("table-bet"),
       [
@@ -275,6 +297,8 @@ function playTableMotion(previous, snapshots) {
       ],
       { duration: 450 },
     );
+  }
+  return finishAt;
 }
 function resourceMotion(previous) {
   if (!previous?.player || !state.player) return;
@@ -674,6 +698,41 @@ function renderAdventure() {
   else if (phase === "pedagio")
     html += `<h3>O Rei exige uma audiência.</h3><p>Pague 8 fichas ou revele sua carta inicial. Se revelar, o Rei comprará até 19 nesta rodada.</p><div class="actions">${button("Pagar 8 fichas", "pedagio", "pagar", {}, "primary", p.fichas < 8)}${button("Revelar a carta", "pedagio", "revelar")}</div>`;
   $("adventure-panel").innerHTML = html;
+  const teaser = $("adventure-panel").querySelector(".boss-teaser,.boss-intel");
+  if (teaser) {
+    teaser.classList.add("illustrated-teaser");
+    teaser.insertAdjacentHTML(
+      "afterbegin",
+      bossPortrait({
+        identity: s.boss.id,
+        name: s.boss.nome,
+        kind: "boss",
+        active: "a",
+      }),
+    );
+  }
+  const emblem = $("adventure-panel").querySelector(".encounter-emblem");
+  if (emblem && phase === "conclusao" && b) {
+    emblem.classList.add("illustrated-emblem");
+    emblem.innerHTML = bossPortrait(b);
+  }
+  if (
+    emblem &&
+    phase === "encontro" &&
+    ["boss", "mesa", "elite"].includes(s.pending.type)
+  ) {
+    const n = s.pending;
+    emblem.classList.add("illustrated-emblem");
+    emblem.innerHTML = bossPortrait({
+      identity: n.type === "boss" ? s.boss.id : n.elite || "mesa",
+      name:
+        n.type === "boss"
+          ? s.boss.nome
+          : s.nodes.find((x) => x.id === n.id).name,
+      kind: n.type,
+      active: "a",
+    });
+  }
   if (
     lastPhase !== phase &&
     !matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -761,13 +820,20 @@ function renderBattle() {
     }
     cards(el.querySelector(".cards"), h.cards);
     el.classList.toggle("active", phase === "jogando" && b.current === i);
+    el.dataset.outcome = b.result
+      ? b.result.hands[i].resultado > 0
+        ? "win"
+        : b.result.hands[i].resultado < 0
+          ? "loss"
+          : "draw"
+      : "";
     el.querySelector(".hand-score").textContent = showing
       ? `${hands.length > 1 ? "MÃO " + (i + 1) + " · " : ""}${h.surrender ? "DESISTÊNCIA" : h.total + " / " + b.limit}${h.natural ? " · BLACKJACK" : ""}${b.result ? " · " + b.result.hands[i].texto.toUpperCase() : ""}`
       : "SUA PRÓXIMA MÃO";
   });
   $("table-bet").hidden = !showing;
-  $("table-bet").textContent =
-    `♜ ${fmt.format(b.hands.reduce((n, h) => n + h.bet, 0))} em jogo`;
+  $("table-bet").innerHTML =
+    `<span class="wager-stack" aria-hidden="true"><i></i><i></i><i></i></span><span><strong>${fmt.format(b.hands.reduce((n, h) => n + h.bet, 0))}</strong><small>EM JOGO</small></span>`;
   document.querySelector(".table-center>span").textContent =
     b.limit === 21
       ? "BLACKJACK PAGA 3:2"
@@ -946,8 +1012,9 @@ function render(previous = null) {
   document.body.classList.toggle("in-battle", combat);
   if (combat) renderBattle();
   else renderAdventure();
+  let soundDelay = 0;
   if (previous && !reducedMotion.matches) {
-    if (combat) playTableMotion(previous, snapshots);
+    if (combat) soundDelay = playTableMotion(previous, snapshots) || 0;
     resourceMotion(previous);
   }
   if (
@@ -959,7 +1026,7 @@ function render(previous = null) {
       state.battle.active !== previous.battle?.active)
   ) {
     tween(
-      $("boss-presence"),
+      document.querySelector(".portrait-frame"),
       [
         { opacity: 0.35, transform: "translateY(5px)" },
         { opacity: 1, transform: "translateY(0)" },
@@ -967,7 +1034,7 @@ function render(previous = null) {
       { duration: 400 },
     );
   }
-  if (previous) playSound(previous);
+  if (previous) playSound(previous, soundDelay);
   lastPhase = state.phase;
 }
 async function act(acao, valor = null, extra = {}) {
@@ -1206,31 +1273,54 @@ function renderEffects(previous) {
   }
 }
 function bossPortrait(b) {
-  const shapes = {
-    ferrugem:
-      '<path d="M22 42V27Q48 6 74 27v15L62 34H34Z" fill="#774e39"/><circle cx="73" cy="28" r="12" fill="#774e39"/><circle cx="27" cy="54" r="4" fill="#d8b56d"/><circle cx="69" cy="54" r="4" fill="#d8b56d"/><circle cx="73" cy="91" r="12" fill="#b87945"/><path d="M73 83v16m-5-8h10" stroke="#f7d398"/>',
-    sinos:
-      '<path d="M17 77V34Q48-7 79 34v43L65 57V33H31v24Z" fill="#8c9180"/><path d="M35 30h26l-3 13H38Z" fill="#eadbb3"/><path d="M67 95h19l-4-7v-7q-6-9-11 0v7Z" fill="#d6b367"/>',
-    gemeas:
-      '<path d="M24 59V26q24-22 48 0v33L61 29 45 42 32 32Z" fill="#b8a4ce"/><path d="M27 44h42l-7 14H34Z" fill="#493b61"/><path d="M48 44v14" stroke="#dbbbdc"/><path d="M74 78l12 12-12 17-12-17Z" fill="#a0c7c2"/>',
-    cobrador:
-      '<path d="M19 29h58v10H19Zm10-21h38l5 21H24Z" fill="#444540"/><path d="M30 47h14v9H30Zm22 0h14v9H52Zm-8 4h8" fill="none" stroke="#d4bc81" stroke-width="2"/><rect x="60" y="79" width="25" height="29" rx="2" fill="#8b4f40"/><path d="M65 83v21m5-15h10m-10 6h10" stroke="#e0bf86"/>',
-    cinzas:
-      '<path d="M22 62V28q26-26 52 0v34l-9-28-17 5-17-5Z" fill="#827c78"/><path d="M33 63q15 12 30 0l-7 16H40Z" fill="#aea09a"/><path d="M66 102q-13-9 3-27l4 12 7-17q16 25 0 32Z" fill="#d17f45"/>',
-    astronomo:
-      '<path d="m15 37 19-30 14 12L63 4l19 33Z" fill="#52617d"/><path d="M27 43h42l-6 18H33Z" fill="#27364f"/><circle cx="48" cy="50" r="5" fill="#d4cd95"/><g fill="none" stroke="#bfaf7c"><circle cx="75" cy="91" r="14"/><ellipse cx="75" cy="91" rx="6" ry="14"/><path d="M61 91h28"/></g>',
-    rei: '<path d="m22 15 13 9L48 7l13 17 13-9-5 23H27Z" fill="#c9ad68"/><path d="M29 39h38v30L48 80 29 69Z" fill="#192523"/><path d="M48 39v34m-9-22h18" stroke="#6d7159"/><path d="M26 86l22 18 22-18" fill="none" stroke="#c9ad68" stroke-width="3"/>',
-  };
-  return `<svg class="boss-portrait" viewBox="0 0 96 120" role="img" aria-label="Retrato de ${esc(b.name)}"><path d="M4 118V103q5-25 30-28h28q25 3 30 28v15" fill="${b.identity === "rei" ? "#705246" : "#3a514c"}"/><path d="M35 68v13l13 13 13-13V68" fill="#b28b6b"/><ellipse cx="48" cy="46" rx="22" ry="29" fill="#c4a080"/><path d="M34 47h7m14 0h7m-18 15h9" stroke="#473b34" stroke-width="2" fill="none"/>${shapes[b.identity] || ""}</svg>`;
+  const tile =
+    {
+      ferrugem: 0,
+      sinos: 1,
+      gemeas: b.active === "b" ? 3 : 2,
+      cobrador: 4,
+      cinzas: 5,
+      astronomo: 6,
+      rei: 7,
+      novica: 1,
+      escrivao: 4,
+      aprendiz: 6,
+    }[b.identity] ?? 8;
+  return `<div class="portrait-frame"><div class="boss-portrait" role="img" aria-label="Retrato de ${esc(b.name)}" style="--portrait-x:${(tile % 3) * 50}%;--portrait-y:${Math.floor(tile / 3) * 50}%"></div><span class="portrait-crest" aria-hidden="true">${b.kind === "boss" ? "♛" : b.kind === "elite" ? "⚔" : "♠"}</span></div>`;
 }
 function renderPresence(b) {
   const el = $("boss-presence");
-  el.hidden = !b.presence;
-  if (!b.presence) return;
-  el.dataset.mood = b.presence.mood;
+  const presence = b.presence || {
+    mood: b.result ? (b.result.score > 0 ? "win" : "loss") : "intro",
+    object: b.kind === "elite" ? "DESAFIANTE DA CORTE" : "JOGADOR DA ESTRADA",
+    speech: b.result
+      ? b.result.score > 0
+        ? "Uma boa mão. Veremos a próxima."
+        : "A mesa ainda tem suas surpresas."
+      : "As cartas estão na mesa.",
+  };
+  el.hidden = false;
+  el.dataset.mood = presence.mood;
   el.dataset.boss = b.identity;
   el.dataset.sister = b.active;
-  el.innerHTML = `${bossPortrait(b)}<div><span class="boss-object">${esc(b.presence.object)}${b.identity === "gemeas" ? ` · ${b.active === "a" ? "Íris" : "Véspera"}` : ""}${b.identity === "rei" ? ` · Ato ${b.act}` : ""}</span><p>“${esc(b.presence.speech)}”</p>${b.identity === "sinos" ? `<div class="bell-meter" aria-label="${b.bells} de 7 sinos">${Array.from({ length: 7 }, (_, i) => `<i class="${i < b.bells ? "lit" : ""}">♧</i>`).join("")}</div>` : ""}</div>`;
+  // Preserve the portrait element between moves so its lighting never restarts on a hit.
+  const identity = b.identity + ":" + b.active;
+  if (el.dataset.identity !== identity) {
+    el.dataset.identity = identity;
+    el.innerHTML = `${bossPortrait(b)}<div class="presence-copy"><span class="boss-object"></span><p></p><div class="boss-meter"></div></div>`;
+  }
+  el.querySelector(".boss-object").textContent =
+    presence.object +
+    (b.identity === "gemeas"
+      ? ` · ${b.active === "a" ? "Íris" : "Véspera"}`
+      : b.identity === "rei"
+        ? ` · Ato ${b.act}`
+        : "");
+  el.querySelector("p").textContent = `“${presence.speech}”`;
+  el.querySelector(".boss-meter").innerHTML =
+    b.identity === "sinos"
+      ? `<div class="bell-meter" aria-label="${b.bells} de 7 sinos">${Array.from({ length: 7 }, (_, i) => `<i class="${i < b.bells ? "lit" : ""}">♧</i>`).join("")}</div>`
+      : "";
 }
 let soundEnabled = false,
   soundContext = null;
@@ -1288,12 +1378,13 @@ document.addEventListener(
   },
   { once: true },
 );
-function playSound(previous) {
+function playSound(previous, visualDelay = 0) {
+  const cue = visualDelay / 1000;
   if (state.phase === "resultado" && previous.phase !== "resultado") {
     const win = state.battle.result.score > 0;
-    tone(win ? 523 : 220, 0, 0.24);
-    tone(win ? 659 : 196, 0.12, 0.24);
-    tone(win ? 784 : 165, 0.24, 0.3);
+    tone(win ? 523 : 220, cue, 0.24);
+    tone(win ? 659 : 196, cue + 0.12, 0.24);
+    tone(win ? 784 : 165, cue + 0.24, 0.3);
   } else if (
     state.battle?.hands?.flatMap((h) => h.cards).length >
     (previous.battle?.hands?.flatMap((h) => h.cards).length || 0)
@@ -1304,4 +1395,139 @@ function playSound(previous) {
     state.battle.bells !== previous.battle?.bells
   )
     tone(880, 0.1, 0.65);
+}
+
+function flyChips(from, to, count = 4, delay = 0) {
+  if (reducedMotion.matches || !from || !to) return;
+  const a = from.getBoundingClientRect(),
+    b = to.getBoundingClientRect();
+  if (!a.width || !b.width) return;
+  for (let i = 0; i < count; i++) {
+    const chip = document.createElement("i");
+    chip.className = "flying-chip";
+    chip.setAttribute("aria-hidden", "true");
+    const x = a.left + a.width / 2 - 12,
+      y = a.top + a.height / 2 - 12;
+    Object.assign(chip.style, { left: x + "px", top: y + "px" });
+    document.body.append(chip);
+    motionLayers.add(chip);
+    const dx = b.left + b.width / 2 - 12 - x,
+      dy = b.top + b.height / 2 - 12 - y;
+    tween(
+      chip,
+      [
+        { opacity: 0, transform: "scale(.7) rotate(0deg)" },
+        { opacity: 1, offset: 0.12 },
+        {
+          opacity: 1,
+          transform: `translate(${dx * 0.5}px,${dy * 0.5 - 36}px) rotate(${60 + i * 15}deg)`,
+          offset: 0.5,
+        },
+        {
+          opacity: 0,
+          transform: `translate(${dx}px,${dy}px) scale(.65) rotate(160deg)`,
+        },
+      ],
+      {
+        duration: 620,
+        delay: delay + i * 65,
+        fill: "backwards",
+        easing: "cubic-bezier(.25,.6,.35,1)",
+      },
+      () => {
+        chip.remove();
+        motionLayers.delete(chip);
+      },
+    );
+  }
+}
+function resultAtmosphere(delay) {
+  const score = state.battle.result.score;
+  const flare = document.createElement("div");
+  flare.className = "table-flare";
+  flare.setAttribute("aria-hidden", "true");
+  flare.style.setProperty(
+    "--flare-color",
+    score > 0 ? "#ecd28a44" : score < 0 ? "#a7594c33" : "#afbfbb22",
+  );
+  $("table").append(flare);
+  motionLayers.add(flare);
+  tween(
+    flare,
+    [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
+    { duration: 1050, delay, fill: "backwards" },
+    () => {
+      flare.remove();
+      motionLayers.delete(flare);
+    },
+  );
+  flyChips(
+    $("table-bet"),
+    score >= 0 ? $("balance") : $("boss-presence"),
+    score > 0 ? 6 : 3,
+    delay + 160,
+  );
+  const portrait = document.querySelector(".portrait-frame");
+  if (portrait)
+    tween(
+      portrait,
+      score > 0
+        ? [
+            { transform: "none" },
+            { transform: "translateY(3px) rotate(-2deg)", offset: 0.35 },
+            { transform: "none" },
+          ]
+        : [
+            { transform: "none" },
+            { transform: "translateY(-3px)", offset: 0.35 },
+            { transform: "none" },
+          ],
+      { duration: 650, delay },
+    );
+  for (const hand of document.querySelectorAll(
+    '.player-hand[data-outcome="win"] .card',
+  )) {
+    tween(
+      hand,
+      [
+        { transform: "none" },
+        { transform: "translateY(-5px)", offset: 0.4 },
+        { transform: "none" },
+      ],
+      { duration: 700, delay: delay + 60 },
+    );
+  }
+  if (score <= 0) return;
+  const r = $("player-hands").getBoundingClientRect();
+  for (let i = 0; i < 12; i++) {
+    const mote = document.createElement("i");
+    mote.className = "victory-mote";
+    mote.setAttribute("aria-hidden", "true");
+    Object.assign(mote.style, {
+      left: r.left + r.width / 2 + (i - 5.5) * 9 + "px",
+      top: r.top + r.height * 0.45 + "px",
+    });
+    document.body.append(mote);
+    motionLayers.add(mote);
+    tween(
+      mote,
+      [
+        { opacity: 0, transform: "scale(.4)" },
+        { opacity: 0.8, offset: 0.2 },
+        {
+          opacity: 0,
+          transform: `translate(${(i - 5.5) * 13}px,${-45 - (i % 4) * 15}px) rotate(${i * 37}deg) scale(.2)`,
+        },
+      ],
+      {
+        duration: 900 + (i % 3) * 100,
+        delay: delay + i * 22,
+        fill: "backwards",
+      },
+      () => {
+        mote.remove();
+        motionLayers.delete(mote);
+      },
+    );
+  }
 }
