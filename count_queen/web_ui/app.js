@@ -62,13 +62,294 @@ const battlePhases = [
   "seguro",
   "oraculo",
   "revelacao",
+  "ultima_palavra",
   "resultado",
 ];
 let state,
   busy = false,
   lastPhase = "",
   assetVersion;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const liveAnimations = new Set();
+const motionLayers = new Set();
+
+function stopMotion() {
+  liveAnimations.forEach((animation) => animation.cancel());
+  liveAnimations.clear();
+  motionLayers.forEach((layer) => layer.remove());
+  motionLayers.clear();
+}
+reducedMotion.addEventListener("change", () => {
+  if (reducedMotion.matches) stopMotion();
+});
+function tween(node, frames, options = {}, cleanup = () => {}) {
+  if (reducedMotion.matches || !node?.isConnected) {
+    cleanup();
+    return;
+  }
+  const animation = node.animate(frames, {
+    duration: 360,
+    easing: "cubic-bezier(.2,.8,.2,1)",
+    ...options,
+  });
+  liveAnimations.add(animation);
+  const done = () => {
+    liveAnimations.delete(animation);
+    cleanup();
+  };
+  animation.finished.then(done, done);
+  return animation;
+}
+function captureCards() {
+  return [...document.querySelectorAll("#table .card")].map((node) => ({
+    key: node.dataset.key,
+    rect: node.getBoundingClientRect(),
+    hidden: node.classList.contains("back"),
+    ghost: node.classList.contains("ghost"),
+    node,
+  }));
+}
+function playTableMotion(previous, snapshots) {
+  if (reducedMotion.matches) return;
+  const freshRound = previous?.phase === "aposta" && state.battle?.hands.length;
+  const deck = document.querySelector(".deck-back").getBoundingClientRect();
+  const table = $("table").getBoundingClientRect();
+  let sequence = 0,
+    finishAt = 0;
+  if (previous?.phase === "resultado" && !state.battle?.hands.length) {
+    snapshots
+      .filter((entry) => !entry.ghost && entry.rect.width)
+      .forEach((entry, i) => {
+        const card = entry.node.cloneNode(true);
+        card.classList.add("motion-card");
+        card.setAttribute("aria-hidden", "true");
+        Object.assign(card.style, {
+          left: entry.rect.x + "px",
+          top: entry.rect.y + "px",
+          width: entry.rect.width + "px",
+          height: entry.rect.height + "px",
+        });
+        document.body.append(card);
+        motionLayers.add(card);
+        tween(
+          card,
+          [
+            { opacity: 1, transform: "none" },
+            {
+              opacity: 0,
+              transform: `translate(${table.right - entry.rect.x}px,-40px) rotate(20deg) scale(.6)`,
+            },
+          ],
+          { duration: 300, delay: i * 35, fill: "backwards" },
+          () => {
+            card.remove();
+            motionLayers.delete(card);
+          },
+        );
+      });
+  }
+  let dealingNodes = [...document.querySelectorAll("#table .card:not(.ghost)")];
+  if (freshRound) {
+    const own = [
+      ...document.querySelectorAll("#player-hands .card:not(.ghost)"),
+    ];
+    const rival = [
+      ...document.querySelectorAll("#dealer-cards .card:not(.ghost)"),
+    ];
+    dealingNodes = Array.from(
+      { length: Math.max(own.length, rival.length) },
+      (_, i) => [own[i], rival[i]],
+    )
+      .flat()
+      .filter(Boolean);
+  }
+  for (const node of dealingNodes) {
+    const target = node.getBoundingClientRect();
+    if (!target.width) continue;
+    const index = freshRound
+      ? -1
+      : snapshots.findIndex(
+          (old) => old.key === node.dataset.key && !old.ghost,
+        );
+    const old = index >= 0 ? snapshots.splice(index, 1)[0] : null;
+    if (old?.rect.width) {
+      const dx = old.rect.x - target.x,
+        dy = old.rect.y - target.y;
+      if (Math.abs(dx) + Math.abs(dy) > 2)
+        tween(node, [
+          { transform: `translate(${dx}px,${dy}px)` },
+          { transform: "none" },
+        ]);
+      continue;
+    }
+    // Reveal only a card that was hidden in the previous server response.
+    const back =
+      !freshRound && node.parentElement.id === "dealer-cards"
+        ? snapshots.find((entry) => entry.hidden)
+        : null;
+    if (back && !node.classList.contains("back")) {
+      snapshots.splice(snapshots.indexOf(back), 1);
+      const cover = back.node.cloneNode(true);
+      cover.classList.add("motion-card");
+      cover.setAttribute("aria-hidden", "true");
+      Object.assign(cover.style, {
+        left: target.x + "px",
+        top: target.y + "px",
+        width: target.width + "px",
+        height: target.height + "px",
+      });
+      document.body.append(cover);
+      motionLayers.add(cover);
+      tween(
+        cover,
+        [
+          { transform: "perspective(700px) rotateY(0deg)" },
+          { transform: "perspective(700px) rotateY(90deg)" },
+        ],
+        { duration: 180, easing: "ease-in" },
+        () => {
+          cover.remove();
+          motionLayers.delete(cover);
+        },
+      );
+      tween(
+        node,
+        [
+          { transform: "perspective(700px) rotateY(-90deg)" },
+          { transform: "perspective(700px) rotateY(0deg)" },
+        ],
+        { duration: 220, delay: 180, fill: "backwards", easing: "ease-out" },
+      );
+      finishAt = Math.max(finishAt, 400);
+    } else {
+      const dx = (deck.width ? deck.x : table.right - 45) - target.x;
+      const dy = (deck.width ? deck.y : table.top + 30) - target.y;
+      const delay = sequence++ * 115;
+      tween(
+        node,
+        [
+          {
+            opacity: 0,
+            transform: `translate(${dx}px,${dy}px) rotate(-14deg) scale(.78)`,
+          },
+          {
+            opacity: 1,
+            transform: "translate(0,-5px) rotate(2deg) scale(1.025)",
+            offset: 0.82,
+          },
+          { opacity: 1, transform: "none" },
+        ],
+        {
+          duration: 520,
+          delay,
+          fill: "backwards",
+          easing: "cubic-bezier(.18,.72,.23,1)",
+        },
+      );
+      finishAt = Math.max(finishAt, delay + 520);
+    }
+  }
+  if (sequence)
+    tween(
+      $("table-deck-button"),
+      [
+        { filter: "brightness(1)" },
+        { filter: "brightness(1.5)", offset: 0.4 },
+        { filter: "brightness(1)" },
+      ],
+      { duration: 400 },
+    );
+  if (state.phase === "resultado" && previous?.phase !== "resultado") {
+    resultAtmosphere(finishAt);
+    tween(
+      $("result"),
+      [
+        { opacity: 0, transform: "translateY(16px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 340, delay: finishAt, fill: "backwards" },
+    );
+    tween(
+      $("player-hands"),
+      [
+        { filter: "brightness(1)" },
+        {
+          filter:
+            state.battle.result.score > 0
+              ? "brightness(1.3)"
+              : "brightness(.8)",
+          offset: 0.5,
+        },
+        { filter: "brightness(1)" },
+      ],
+      { duration: 500, delay: finishAt },
+    );
+  }
+  const oldBet = previous?.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
+  const newBet = state.battle?.hands.reduce((n, h) => n + h.bet, 0) || 0;
+  if (newBet > oldBet && !$("table-bet").hidden) {
+    flyChips($("balance"), $("table-bet"), 4, 0);
+    tween(
+      $("table-bet"),
+      [
+        { opacity: 0, transform: "translateY(55px) scale(.7)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 450 },
+    );
+  }
+  return finishAt;
+}
+function resourceMotion(previous) {
+  if (!previous?.player || !state.player) return;
+  for (const [id, key] of [
+    ["balance", "fichas"],
+    ["prestige", "prestigio"],
+  ]) {
+    const delta = state.player[key] - previous.player[key];
+    if (!delta) continue;
+    const node = $(id);
+    tween(
+      node,
+      [
+        { transform: "scale(1)" },
+        {
+          transform: "scale(1.13)",
+          color: delta > 0 ? "#cceca1" : "#ffb6a1",
+          offset: 0.35,
+        },
+        { transform: "scale(1)" },
+      ],
+      { duration: 500 },
+    );
+    if (reducedMotion.matches) continue;
+    const label = document.createElement("span");
+    label.className = `resource-change ${delta > 0 ? "positive" : "negative"}`;
+    label.textContent = signed(delta);
+    label.setAttribute("aria-hidden", "true");
+    node.parentElement.append(label);
+    motionLayers.add(label);
+    tween(
+      label,
+      [
+        { opacity: 0, transform: "translateY(8px)" },
+        { opacity: 1, transform: "translateY(0)", offset: 0.2 },
+        { opacity: 1, offset: 0.65 },
+        { opacity: 0, transform: "translateY(-18px)" },
+      ],
+      { duration: 1100 },
+      () => {
+        label.remove();
+        motionLayers.delete(label);
+      },
+    );
+  }
+}
 const sigils = {
+  bolso_falso: "M2 3h12v10H2z M4 5h8v6H4z M6 1h4v6H6z",
+  balanca_carrasco:
+    "M7 1h2v12h4v2H3v-2h4V5H2V3h12v2H9z M1 6h4v4H1z M11 6h4v4h-4z",
+  ultima_palavra: "M2 1h10v2h2v9H8l-4 3v-3H2z M4 4h6v2H4z M4 8h4v2H4z",
   manilha_sorte: "M4 5h8v6H4z M2 7h2v2H2z M12 7h2v2h-2z",
   moeda_peregrino: "M5 2h6v2h2v8h-2v2H5v-2H3V4h2z M7 5v6h2V5z",
   broche_prudencia: "M7 1h2v3h3v3h3v2h-3v3H9v3H7v-3H4V9H1V7h3V4h3z",
@@ -135,12 +416,11 @@ function cardHTML(c, i = 0) {
     return '<div class="card back" role="img" aria-label="Carta oculta"><svg><use href="#crown"/></svg></div>';
   if (c.ghost)
     return '<div class="card ghost" aria-hidden="true"><svg><use href="#crown"/></svg></div>';
-  const red = ["Copas", "Ouros"].includes(c.naipe),
-    face = ["J", "Q", "K"].includes(c.valor);
+  const red = ["Copas", "Ouros"].includes(c.naipe);
   const value = c.temporaria === "coroa" ? (c.pontos ?? 0) : c.valor;
   const label = `${value} de ${c.naipe}${c.marca ? " · " + c.marca : ""}${c.temporaria ? " · " + c.temporaria : ""}${c.pontos !== undefined ? " · vale " + c.pontos : ""}`;
   const corner = `<span>${esc(value)}</span><small>${suits[c.naipe] || "◇"}</small>`;
-  return `<div class="card ${red ? "red" : ""} ${c.marca ? "marked" : ""}" style="--i:${i}" role="img" aria-label="${esc(label)}" title="${esc(label)}"><span class="card-corner">${corner}</span><span class="card-suit ${face ? "face" : ""}"><span>${face ? esc(value) : suits[c.naipe] || "◇"}</span></span><span class="card-corner bottom">${corner}</span>${c.marca ? `<span class="mark-tag">${esc(c.marca)}</span>` : ""}</div>`;
+  return `<div class="card ${red ? "red" : ""} ${c.marca ? "marked" : ""}" role="img" aria-label="${esc(label)}" title="${esc(label)}"><span class="card-corner">${corner}</span><span class="card-suit"><strong class="card-value">${esc(value)}</strong><small class="card-center-suit">${suits[c.naipe] || "◇"}</small></span><span class="card-corner bottom">${corner}</span>${c.marca ? `<span class="mark-tag">${esc(c.marca)}</span>` : ""}</div>`;
 }
 function cards(el, list) {
   const signature = JSON.stringify(list);
@@ -165,7 +445,7 @@ function cards(el, list) {
 }
 function info(title, html) {
   $("info-content").innerHTML =
-    `<div class="eyebrow">COUNT & QUEEN</div><h2>${esc(title)}</h2>${html}`;
+    `<div class="eyebrow">COUNT & QUEEN</div><h2 id="info-title">${esc(title)}</h2>${html}`;
   if (!$("info-dialog").open) $("info-dialog").showModal();
 }
 function itemList(keys, catalog) {
@@ -185,7 +465,7 @@ function inventory() {
         .map(([r, n]) => `<p>${esc(r)}: nível ${n} · +${15 * n}% de lucro.</p>`)
         .join("") ||
       "<p>Nenhuma afinidade. Os rituais do Empório podem criar uma.</p>"
-    }<h3>Dívidas</h3><p>Juramento: ${fmt.format(state.player.debt)} fichas. Empréstimo: ${fmt.format(state.player.loan)} fichas.</p><details><summary>Catálogo completo · 24 relíquias e 12 juramentos</summary>${itemList(Object.keys(state.catalog.relics), state.catalog.relics)}${itemList(Object.keys(state.catalog.oaths), state.catalog.oaths)}</details></div>`,
+    }<h3>Dívidas</h3><p>Familiar: ${fmt.format(state.player.origin_debt || 0)} fichas (25% do lucro antes do juramento). Juramento: ${fmt.format(state.player.debt)} fichas. Empréstimo: ${fmt.format(state.player.loan)} fichas.</p><details><summary>Catálogo completo · ${Object.keys(state.catalog.relics).length} relíquias e 12 juramentos</summary>${itemList(Object.keys(state.catalog.relics), state.catalog.relics)}${itemList(Object.keys(state.catalog.oaths), state.catalog.oaths)}</details></div>`,
   );
 }
 function deckView() {
@@ -198,7 +478,7 @@ function deckView() {
             .map(([v, n]) => `${esc(v)}: ${n}`)
             .join(" · ")}</p>`
         : ""
-    }<div class="deck-grid">${state.deck.cards.map((c) => `<div>${cardHTML(c)}</div>`).join("")}</div><h3>Descarte</h3><p>${state.deck.discard.map((c) => `${esc(c.valor)}${suits[c.naipe] || "◇"}`).join(" · ") || "Ainda vazio."}</p><h3>Marcas</h3>${Object.values(
+    }<div class="deck-grid">${state.deck.cards.map((c) => `<div>${cardHTML(c)}${c.id === state.player.reserved ? "<small>Guardada · próxima rodada</small>" : ""}</div>`).join("")}</div><h3>Descarte</h3><p>${state.deck.discard.map((c) => `${esc(c.valor)}${suits[c.naipe] || "◇"}`).join(" · ") || "Ainda vazio."}</p><h3>Marcas</h3>${Object.values(
       state.catalog.marks,
     )
       .map((m) => `<p><strong>${esc(m.nome)}:</strong> ${esc(m.descricao)}</p>`)
@@ -258,9 +538,12 @@ function mapHTML() {
   const nodes = state.nodes,
     rows = Math.max(...nodes.map((n) => n.row)) + 1;
   const height = rows * 104 + 35;
-  const x = (c) => 60 + c * 140,
-    y = (r) => height - 45 - r * 104;
-  let paths = "";
+  const x = (r) => 8 + (r * 84) / (rows - 1),
+    y = (c) => 20 + c * 30;
+  const mobileX = (c) => 15 + c * 35,
+    mobileY = (r) => 92 - (r * 84) / (rows - 1);
+  let paths = "",
+    mobilePaths = "";
   for (const a of nodes)
     for (const b of nodes) {
       if (
@@ -269,14 +552,19 @@ function mapHTML() {
       ) {
         const done =
           state.visited.includes(a.id) && state.visited.includes(b.id);
-        paths += `<path class="${done ? "travelled" : ""}" d="M ${x(a.col)} ${y(a.row)} L ${x(b.col)} ${y(b.row)}"/>`;
+        const available =
+          (state.visited.includes(a.id) && b.available) ||
+          (a.available && b.row === a.row + 1);
+        const cls = done ? "travelled" : available ? "next-road" : "";
+        paths += `<path class="${cls}" d="M ${x(a.row)} ${y(a.col)} L ${x(b.row)} ${y(b.col)}"/>`;
+        mobilePaths += `<path class="${cls}" d="M ${mobileX(a.col)} ${mobileY(a.row)} L ${mobileX(b.col)} ${mobileY(b.row)}"/>`;
       }
     }
-  return `<div class="map-intro"><div><h3>O reino tem mais de um caminho.</h3><p>Escolha um encontro conectado. Você avança uma camada por vez.</p></div><span class="map-counter">REGIÃO ${state.region + 1} / 4</span></div><div class="map-board" style="--map-height:${height}px"><svg viewBox="0 0 400 ${height}" preserveAspectRatio="none" aria-hidden="true">${paths}</svg>${nodes
+  return `<div class="map-intro"><div><h3>Escolha a próxima parada</h3><p>Siga uma das rotas iluminadas até o boss.</p></div><span class="map-counter">REGIÃO ${state.region + 1} / 4</span></div><div class="map-board" style="--map-height:${height}px"><svg class="map-landscape" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${paths}</svg><svg class="map-portrait" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${mobilePaths}</svg>${nodes
     .map((n) => {
       const visited = state.visited.includes(n.id),
         next = n.available;
-      return `<div class="map-node ${visited ? "visited" : ""} ${next ? "available" : ""} ${n.type === "boss" ? "boss-node" : ""}" style="left:${x(n.col) / 4}%;top:${y(n.row)}px"><button data-command="${encodeURIComponent(JSON.stringify({ acao: "no", valor: n.id }))}" ${!next ? "disabled" : ""} aria-label="${esc(n.name)}${next && !n.connected ? " · usar Bússola" : ""}" title="${esc(n.name)}"><span>${glyph[n.type]}</span></button><small>${esc(n.type === "boss" ? state.boss.nome : names[n.type])}${visited ? " · ✓" : ""}${next && !n.connected ? " · Bússola" : ""}</small></div>`;
+      return `<div class="map-node ${visited ? "visited" : ""} ${next ? "available" : ""} ${n.type === "boss" ? "boss-node" : ""}" style="--x:${x(n.row)}%;--y:${y(n.col)}%;--mx:${mobileX(n.col)}%;--my:${mobileY(n.row)}%"><button data-command="${encodeURIComponent(JSON.stringify({ acao: "no", valor: n.id }))}" ${!next ? "disabled" : ""} aria-label="${esc(n.name)}${next && !n.connected ? " · usar Bússola" : ""}" title="${esc(n.name)}"><span>${glyph[n.type]}</span></button><small>${esc(n.type === "boss" ? state.boss.nome : names[n.type])}${visited ? " · ✓" : ""}${next && !n.connected ? " · Bússola" : ""}</small></div>`;
     })
     .join("")}</div><div class="map-key">${Object.entries(names)
     .map(([k, v]) => `<span>${glyph[k]} ${v}</span>`)
@@ -286,7 +574,7 @@ function mapHTML() {
 }
 function workshop() {
   const options = state.deck.cards
-    .filter((c) => !c.temporaria)
+    .filter((c) => !c.temporaria && c.id !== state.player.reserved)
     .map(
       (c) =>
         `<option value="${c.id}">${esc(c.valor)} de ${esc(c.naipe)}${c.marca ? " · " + esc(c.marca) : ""} · #${c.id}</option>`,
@@ -375,7 +663,7 @@ function renderAdventure() {
       biblioteca: "Um livro sobreviveu ao incêndio.",
       audiencia: "Seu nome chegou antes de você.",
     }[s.event];
-    html += `<h3>${phase === "evento" ? title : phase === "refugio" ? "A estrada pode esperar." : "Quem você pretende se tornar?"}</h3><div class="story-choices">${s.options.map((o) => `<article class="story-choice"><div><h4>${esc(o.nome)}</h4><p>${esc(o.descricao)}</p></div>${button("Escolher", "escolha", o.id, {}, "primary")}</article>`).join("")}</div>`;
+    html += `<h3>${phase === "evento" ? esc(s.story?.title || title) : phase === "refugio" ? "A estrada pode esperar." : "Quem você pretende se tornar?"}</h3>${s.story ? `<p class="story-chapter">CAPÍTULO ${s.story.chapter} DE 3</p><p>${esc(s.story.text)}</p>` : ""}<div class="story-choices">${s.options.map((o) => `<article class="story-choice"><div><h4>${esc(o.nome)}</h4><p>${esc(o.descricao)}</p></div>${button("Escolher", "escolha", o.id, {}, "primary", o.enabled === false)}</article>`).join("")}</div>`;
   } else if (phase === "conclusao") {
     const r = s.result;
     html += `<div class="encounter-emblem">${r.won ? "♛" : "◇"}</div><h3>${r.won ? "Vitória" : "Derrota"}</h3><p>${esc(r.name)} · ${r.won ? "Recompensas recebidas." : "Sem recompensa de vitória; prestígio reduzido."}</p>${r.boss && !r.won ? `<p>${r.retry ? `Uma revanche está disponível por ${r.cost} fichas.` : "Sua revanche já foi usada."} Encerrar o desafio termina a jornada.</p>` : ""}<div class="actions">${r.retry ? button(`Revanche · ${r.cost} fichas`, "revanche", null, {}, "primary", p.fichas < r.cost) : ""}${button(r.boss && !r.won ? "Encerrar jornada" : r.boss ? "Próxima região" : "Voltar ao mapa", "seguir", null, {}, "primary")}</div>`;
@@ -410,6 +698,54 @@ function renderAdventure() {
   else if (phase === "pedagio")
     html += `<h3>O Rei exige uma audiência.</h3><p>Pague 8 fichas ou revele sua carta inicial. Se revelar, o Rei comprará até 19 nesta rodada.</p><div class="actions">${button("Pagar 8 fichas", "pedagio", "pagar", {}, "primary", p.fichas < 8)}${button("Revelar a carta", "pedagio", "revelar")}</div>`;
   $("adventure-panel").innerHTML = html;
+  const teaser = $("adventure-panel").querySelector(".boss-teaser,.boss-intel");
+  if (teaser) {
+    teaser.classList.add("illustrated-teaser");
+    teaser.insertAdjacentHTML(
+      "afterbegin",
+      bossPortrait({
+        identity: s.boss.id,
+        name: s.boss.nome,
+        kind: "boss",
+        active: "a",
+      }),
+    );
+  }
+  const emblem = $("adventure-panel").querySelector(".encounter-emblem");
+  if (emblem && phase === "conclusao" && b) {
+    emblem.classList.add("illustrated-emblem");
+    emblem.innerHTML = bossPortrait(b);
+  }
+  if (
+    emblem &&
+    phase === "encontro" &&
+    ["boss", "mesa", "elite"].includes(s.pending.type)
+  ) {
+    const n = s.pending;
+    emblem.classList.add("illustrated-emblem");
+    emblem.innerHTML = bossPortrait({
+      identity: n.type === "boss" ? s.boss.id : n.elite || "mesa",
+      name:
+        n.type === "boss"
+          ? s.boss.nome
+          : s.nodes.find((x) => x.id === n.id).name,
+      kind: n.type,
+      active: "a",
+    });
+  }
+  if (
+    lastPhase !== phase &&
+    !matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    tween(
+      $("adventure-panel"),
+      [
+        { opacity: 0, transform: "translateY(10px)" },
+        { opacity: 1, transform: "none" },
+      ],
+      { duration: 280 },
+    );
+  }
   $("new-legend")?.addEventListener("click", () => $("welcome").showModal());
   $("affinity-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -441,8 +777,17 @@ function renderBattle() {
       .join(
         " · ",
       )}. ${b.remaining} cartas para comprar.</p><p>Bênçãos: ${b.blessings}. ${b.draws >= 2 ? "DESEMPATE ATIVO: em empate comum, vence a mão válida com menos cartas; igualdade favorece você." : ""}</p>${b.contract ? `<p>Contrato: ${esc(b.contract)}.</p>` : ""}${b.charge ? `<p>Cobrança: ${esc(b.charge_descriptions[b.charge])}</p>` : ""}${b.identity === "gemeas" ? `<p>Defesas já gastas: ${b.sisters_saved.map((x) => (x === "a" ? "Íris" : "Véspera")).join(", ") || "nenhuma"}.</p>` : ""}${b.identity === "sinos" ? `<p>Sinos: ${b.bells}/7.</p>` : ""}</details>`;
+  renderPresence(b);
   $("table").dataset.chapter = state.region;
-  $("dealer-name").textContent = b.name;
+  $("table").dataset.outcome = b.result
+    ? b.result.score > 0
+      ? "win"
+      : b.result.score < 0
+        ? "loss"
+        : "draw"
+    : "";
+  $("dealer-name").textContent =
+    b.name + (b.identity === "rei" ? ` · Ato ${b.act}/3` : "");
   $("dealer-rule").textContent = `Para em ${b.dealer_stop}`;
   const showing = b.hands.length > 0;
   cards(
@@ -458,7 +803,7 @@ function renderBattle() {
       ? `${b.dealer_total} / ${b.limit}`
       : b.preview
         ? "CARTA REVELADA PELO CONTRATO"
-        : "A CARTA OCULTA GUARDA UM SEGREDO";
+        : "CARTA OCULTA";
   const hands = showing
     ? b.hands
     : [{ cards: [{ ghost: true }, { ghost: true }], total: 0 }];
@@ -475,24 +820,40 @@ function renderBattle() {
     }
     cards(el.querySelector(".cards"), h.cards);
     el.classList.toggle("active", phase === "jogando" && b.current === i);
+    el.dataset.outcome = b.result
+      ? b.result.hands[i].resultado > 0
+        ? "win"
+        : b.result.hands[i].resultado < 0
+          ? "loss"
+          : "draw"
+      : "";
     el.querySelector(".hand-score").textContent = showing
       ? `${hands.length > 1 ? "MÃO " + (i + 1) + " · " : ""}${h.surrender ? "DESISTÊNCIA" : h.total + " / " + b.limit}${h.natural ? " · BLACKJACK" : ""}${b.result ? " · " + b.result.hands[i].texto.toUpperCase() : ""}`
       : "SUA PRÓXIMA MÃO";
   });
   $("table-bet").hidden = !showing;
-  $("table-bet").textContent =
-    `♜ ${fmt.format(b.hands.reduce((n, h) => n + h.bet, 0))} em jogo`;
+  $("table-bet").innerHTML =
+    `<span class="wager-stack" aria-hidden="true"><i></i><i></i><i></i></span><span><strong>${fmt.format(b.hands.reduce((n, h) => n + h.bet, 0))}</strong><small>EM JOGO</small></span>`;
   document.querySelector(".table-center>span").textContent =
     b.limit === 21
       ? "BLACKJACK PAGA 3:2"
       : `LIMITE ${b.limit} · SEM BLACKJACK NATURAL`;
   $("bet-form").hidden = phase !== "aposta";
-  $("actions").hidden = !["jogando", "seguro", "revelacao"].includes(phase);
+  $("actions").hidden = ![
+    "jogando",
+    "seguro",
+    "revelacao",
+    "ultima_palavra",
+  ].includes(phase);
   $("result").hidden = phase !== "resultado";
+  $("result-breakdown").hidden = phase !== "resultado";
+  if (phase !== "resultado") $("result-breakdown").open = false;
   $("oracle").hidden = phase !== "oraculo";
   if (phase === "aposta") {
-    $("status").textContent =
-      "Escolha sua aposta. Seu baralho acompanha você pela estrada.";
+    const reserved = state.deck.cards.find((c) => c.id === p.reserved);
+    $("status").textContent = reserved
+      ? `Faça sua aposta. Bolso Falso abrirá com ${reserved.valor} de ${reserved.naipe}.`
+      : "Faça sua aposta.";
     $("bet").max = Math.floor(p.fichas);
     if (lastPhase !== phase || Number($("bet").value) > p.fichas)
       $("bet").value = Math.max(
@@ -521,8 +882,14 @@ function renderBattle() {
       trono: "Trocar mãos · Trono",
       bencao: "Usar bênção",
       brasa: "Atiçar a Brasa",
+      guardar: "Guardar carta · Bolso Falso",
     };
     $("actions").innerHTML = Object.entries(labels)
+      .filter(
+        ([k]) =>
+          ["pedir", "parar", "dobrar", "dividir", "desistir"].includes(k) ||
+          b.actions.includes(k),
+      )
       .map(([k, l]) =>
         button(
           l,
@@ -534,6 +901,17 @@ function renderBattle() {
         ),
       )
       .join("");
+    if (b.actions.includes("transferir")) {
+      $("actions").innerHTML +=
+        `<form id="balance-form" class="inline-form"><label for="balance-card">BALANÇA DO CARRASCO</label><select id="balance-card" aria-label="Carta a transferir">${b.hands[b.current].cards.map((c) => `<option value="${c.id}">${esc(c.valor)} de ${esc(c.naipe)}</option>`).join("")}</select><select id="balance-target" aria-label="Mão de destino">${b.hands.map((h, i) => (i > b.current ? `<option value="${i}">Mão ${i + 1} · ${h.total} pontos</option>` : "")).join("")}</select><button class="action-button">Transferir carta</button></form>`;
+      $("balance-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        act("transferir", null, {
+          carta: $("balance-card").value,
+          destino: Number($("balance-target").value),
+        });
+      });
+    }
     if (b.actions.includes("coroa"))
       $("actions").innerHTML +=
         '<form id="crown-form" class="inline-form"><label for="crown-value">CARTA DA COROA</label><input id="crown-value" type="number" min="1" max="11" value="1" required><button class="action-button">Fixar valor</button></form>';
@@ -565,23 +943,34 @@ function renderBattle() {
     $("actions").innerHTML =
       button("Usar Cetro", "cetro", null, {}, "primary") +
       button("Manter resultado", "liquidar");
-  } else if (phase === "resultado") {
+  } else if (phase === "ultima_palavra") {
     $("status").textContent =
-      "Rodada encerrada. Os baralhos e o placar foram salvos.";
+      "Última Palavra · o rival parou. Compre uma carta ou aceite o resultado. Uma compra por encontro.";
+    $("actions").innerHTML =
+      button("Comprar última carta", "comprar_final", null, {}, "primary") +
+      button("Aceitar resultado", "aceitar_resultado");
+  } else if (phase === "resultado") {
+    $("calculation").innerHTML = calculationHTML(b.result);
+    $("status").textContent = "Rodada encerrada.";
     const r = b.result;
     $("result").innerHTML =
-      `<div><h3>${r.score > 0 ? "A rodada é sua." : r.score < 0 ? "O rival levou a melhor." : "Honras divididas."}</h3><p><span class="${r.fichas >= 0 ? "positive" : "negative"}">${signed(r.fichas)} fichas</span> · ${signed(r.prestigio)} de prestígio</p></div>${button("Continuar", "continuar", null, {}, "primary")}`;
+      `<div><h3>${r.score > 0 ? "Vitória" : r.score < 0 ? "Derrota" : "Empate"}</h3><p><span class="${r.fichas >= 0 ? "positive" : "negative"}">${signed(r.fichas)} fichas</span> · ${signed(r.prestigio)} de prestígio</p></div>${button("Continuar", "continuar", null, {}, "primary")}`;
   }
 }
-function render() {
+function render(previous = null) {
   if (!state) return;
-  $("history").innerHTML = historyHTML();
+  stopMotion();
+  renderOrigins();
+  const snapshots = previous ? captureCards() : [];
+  document.body.dataset.phase = state.phase || "inicio";
+  document.body.dataset.region = state.region ?? 0;
   const p = state.player;
   $("table").hidden = true;
   $("control-panel").hidden = true;
   $("battle-rules").hidden = true;
   $("adventure-panel").hidden = false;
   if (!p) {
+    document.body.classList.remove("in-battle");
     $("adventure-panel").innerHTML =
       '<div class="encounter-emblem">♛</div><h3>Quatro regiões. Uma coroa.</h3><p>Escolha caminhos, construa seu baralho e enfrente o Rei Sem Rosto.</p>';
     if (!$("welcome").open) $("welcome").showModal();
@@ -592,48 +981,67 @@ function render() {
   $("player-title").textContent = p.titulo;
   $("balance").textContent = fmt.format(p.fichas);
   $("prestige").innerHTML = `${p.prestigio} <small>/ 100</small>`;
-  $("progress").value = p.prestigio;
-  $("progress-caption").textContent =
-    "Influência abre oportunidades. O mapa leva à coroa.";
-  $("path-label").innerHTML =
-    `<span></span> Caminho da ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}`;
-  $("save-status").textContent = "Jornada salva automaticamente";
+  $("deck-count").textContent = state.deck.cards.length;
+  $("draw-count").textContent = state.deck.remaining;
+  $("relic-count").textContent = p.itens.length;
   $("chapter-label").textContent =
     `REGIÃO ${state.region + 1} · ${phaseNames[state.phase] || "À MESA"}`;
   $("chapter").textContent = state.regions[state.region];
   $("round").textContent = String(
     state.round_count + (state.phase === "resultado" ? 0 : 1),
   ).padStart(2, "0");
-  $("route").innerHTML = state.regions
-    .map(
-      (name, i) =>
-        `<li class="${state.region === i ? "current" : state.region > i ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Região atravessada" : "Além da estrada"}</small></div></li>`,
-    )
+  $("relics").innerHTML = p.itens
+    .map((k) => {
+      const item = state.catalog.relics[k];
+      return `<button class="relic ${item.raridade}" data-relic="${k}" aria-label="${esc(item.nome)} · ${rarityLabels[item.raridade]}" title="${esc(item.nome)}">${sigil(k)}</button>`;
+    })
     .join("");
-  $("relics").innerHTML =
-    p.itens
-      .map(
-        (k) =>
-          `<button class="relic ${state.catalog.relics[k].raridade}" data-inventory title="${esc(state.catalog.relics[k].descricao)}">${sigil(k)} ${esc(state.catalog.relics[k].nome)}<small>${rarityLabels[state.catalog.relics[k].raridade]}</small></button>`,
-      )
-      .join("") ||
-    '<div class="relic-empty"><svg><use href="#diamond"/></svg><p>Nenhuma relíquia</p><small>Encontros vencidos concedem relíquias.</small></div>';
-  $("oaths-summary").innerHTML =
-    `<div class="section-label">SEUS JURAMENTOS</div>${p.juramentos.map((k) => `<button class="oath-summary" data-inventory title="${esc(state.catalog.oaths[k].descricao)}">${esc(state.catalog.oaths[k].nome)}${p.consagrado === k ? " · consagrado" : ""}</button>`).join("")}`;
-  $("global-notice").hidden = !state.notice;
-  $("global-notice").textContent = state.notice;
+  const unlockText = (state.new_unlocks || [])
+    .map((k) => `Nova origem desbloqueada: ${state.catalog.origins[k].nome}.`)
+    .join(" ");
+  $("global-notice").hidden = !(state.notice || unlockText);
+  $("global-notice").textContent = [state.notice, unlockText]
+    .filter(Boolean)
+    .join(" ");
+  renderEffects(previous);
   const combat = battlePhases.includes(state.phase);
   $("adventure-panel").hidden = combat;
   $("table").hidden = !combat;
   $("control-panel").hidden = !combat;
   $("battle-rules").hidden = !combat;
+  document.body.classList.toggle("in-battle", combat);
   if (combat) renderBattle();
   else renderAdventure();
+  let soundDelay = 0;
+  if (previous && !reducedMotion.matches) {
+    if (combat) soundDelay = playTableMotion(previous, snapshots) || 0;
+    resourceMotion(previous);
+  }
+  if (
+    previous &&
+    combat &&
+    state.battle.presence &&
+    !reducedMotion.matches &&
+    (state.battle.presence.speech !== previous.battle?.presence?.speech ||
+      state.battle.active !== previous.battle?.active)
+  ) {
+    tween(
+      document.querySelector(".portrait-frame"),
+      [
+        { opacity: 0.35, transform: "translateY(5px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ],
+      { duration: 400 },
+    );
+  }
+  if (previous) playSound(previous, soundDelay);
   lastPhase = state.phase;
 }
 async function act(acao, valor = null, extra = {}) {
   if (busy || !state) return;
   let acquired = null;
+  const previous = state;
+  let accepted = false;
   const previousItems = new Set(state.player?.itens || []);
   busy = true;
   $("global-error").hidden = true;
@@ -653,6 +1061,7 @@ async function act(acao, valor = null, extra = {}) {
     if (!response.ok)
       throw new Error(data.erro || "Não foi possível concluir a ação.");
     state = data;
+    accepted = true;
     acquired = state.player?.itens.find((k) => !previousItems.has(k)) || null;
   } catch (e) {
     const el = $("welcome").open ? $("welcome-error") : $("global-error");
@@ -668,7 +1077,7 @@ async function act(acao, valor = null, extra = {}) {
   } finally {
     busy = false;
     disabled.forEach(([b, d]) => (b.disabled = d));
-    render();
+    render(accepted ? previous : null);
     if (acquired) celebrate(acquired);
   }
 }
@@ -682,6 +1091,11 @@ document.addEventListener("click", (e) => {
     act(acao, valor, extra);
   }
   if (e.target.closest("[data-inventory]")) inventory();
+  const relic = e.target.closest("[data-relic]");
+  if (relic) {
+    const key = relic.dataset.relic;
+    info(state.catalog.relics[key].nome, itemList([key], state.catalog.relics));
+  }
 });
 $("bet-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -699,13 +1113,27 @@ $("bet-form")
   );
 $("new-game-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  act("nova", null, { nome: $("name").value, genero: $("gender").value });
+  act("nova", null, {
+    nome: $("name").value,
+    genero: $("gender").value,
+    origem:
+      document.querySelector("input[name=origin]:checked")?.value || "viajante",
+  });
 });
 $("welcome").addEventListener("cancel", (e) => {
   if (!state?.player) e.preventDefault();
 });
 $("inventory-button").addEventListener("click", inventory);
 $("deck-button").addEventListener("click", deckView);
+$("table-deck-button").addEventListener("click", deckView);
+$("journey-button").addEventListener("click", () => {
+  if (!state?.player) return;
+  const p = state.player;
+  info(
+    "Sua jornada",
+    `<p>${esc(p.nome)} · ${esc(p.titulo)} · ${p.caminho === "tirania" ? "Tirania" : "Nobreza"}</p><ol class="route">${state.regions.map((name, i) => `<li class="${i === state.region ? "current" : i < state.region ? "passed" : ""}"><span>${["I", "II", "III", "IV"][i]}</span><div>${esc(name)}<small>${i === state.region ? "Você está aqui" : i < state.region ? "Concluída" : "Por descobrir"}</small></div></li>`).join("")}</ol>${journeyStories(p)}<p class="note">Jornada salva automaticamente.</p>`,
+  );
+});
 $("history-button").addEventListener("click", () =>
   info("Crônica da jornada", historyHTML()),
 );
@@ -773,3 +1201,333 @@ document.addEventListener("fullscreenchange", () => {
   fullscreenButton.textContent = active ? "Sair da tela cheia" : "Tela cheia";
   fullscreenButton.setAttribute("aria-pressed", String(active));
 });
+
+// The server supplies the applied effects and calculation; the UI never guesses payouts.
+function effectName(key) {
+  return (
+    state.catalog.relics[key]?.nome ||
+    state.catalog.oaths[key]?.nome ||
+    {
+      afinidade: "Afinidade",
+      marcas: "Marcas das cartas",
+      contrato: "Contrato",
+      credor: "Dívida familiar",
+    }[key] ||
+    key
+  );
+}
+function calculationHTML(result) {
+  return (
+    result.hands
+      .map((h, i) => {
+        const c = h.calculation;
+        if (!c) return `<p>Mão ${i + 1}: ${esc(h.texto)}.</p>`;
+        const raw = 1 + c.parts.reduce((n, p) => n + p.amount, 0);
+        return `<article class="hand-calculation"><h4>Mão ${i + 1} · ${esc(h.texto)}</h4><p>Aposta em jogo: ${fmt.format(c.bet)} fichas${c.natural ? " · blackjack 3:2" : ""}.</p>${c.parts.length ? `<ul>${c.parts.map((p) => `<li>${esc(effectName(p.source))} <strong>${signed(p.amount * 100)}%</strong></li>`).join("")}</ul>` : "<p>Sem modificadores de lucro.</p>"}<p>Multiplicador ${c.applied ? "aplicado" : "disponível, sem aplicação nesta mão"}: <strong>×${fmt.format(c.multiplier)}</strong>${Math.abs(raw - c.multiplier) > 0.0001 ? " · limitado entre ×0,1 e ×3" : ""}.</p>${c.applied ? `<p>Lucro antes das dívidas: ${fmt.format(c.profit)}. Familiar: −${fmt.format(c.payments.family)} · juramento: −${fmt.format(c.payments.oath)}. Lucro recebido: ${fmt.format(c.payments.received)}.</p>` : ""}<p>Creditado na liquidação: ${fmt.format(c.credited)} fichas, incluindo aposta devolvida e efeitos adicionais. Devolução por desistência e seguro acontece antes da liquidação.</p></article>`;
+      })
+      .join("") +
+    `<p class="note">Saldo líquido da rodada: ${signed(result.fichas)} fichas. Inclui apostas, seguro, devoluções, cobranças e efeitos da rodada.</p>`
+  );
+}
+function renderOrigins() {
+  const el = $("origin-options"),
+    selected =
+      document.querySelector("input[name=origin]:checked")?.value || "viajante";
+  const signature = JSON.stringify(state.unlocks);
+  if (el.dataset.signature === signature) return;
+  el.dataset.signature = signature;
+  el.innerHTML =
+    "<legend>SUA ORIGEM</legend>" +
+    Object.entries(state.catalog.origins)
+      .map(([k, o]) => {
+        const available =
+          k === "viajante" || state.unlocks.includes("origem_" + k);
+        return `<label class="origin-card ${available ? "" : "locked"}"><span><input type="radio" name="origin" value="${k}" ${k === selected ? "checked" : ""} ${available ? "" : "disabled"}><strong>${esc(o.nome)}</strong></span><small>${esc(o.descricao)}</small><em>${available ? "Disponível" : `Bloqueada · ${esc(o.unlock)}`}</em></label>`;
+      })
+      .join("");
+}
+function journeyStories(p) {
+  return `<h3>${esc(state.catalog.origins[p.origem]?.nome || "Viajante")}</h3><p>${esc(state.catalog.origins[p.origem]?.descricao || "")}</p><p>Dívida familiar restante: ${fmt.format(p.origin_debt || 0)} fichas.</p><h3>Encontros que deixam marcas</h3>${(p.story_log || []).map((s) => `<article class="story-record"><strong>${esc(s.title)} · capítulo ${s.chapter}</strong><p>${esc(s.choice)} — ${esc(s.consequence)}</p></article>`).join("") || "<p>Suas escolhas nos encontros recorrentes aparecerão aqui.</p>"}`;
+}
+function renderEffects(previous) {
+  const effects = state.effects || [],
+    el = $("effect-feed");
+  el.hidden = !effects.length;
+  el.innerHTML = effects.length
+    ? `<details><summary>${effects.length} efeito${effects.length > 1 ? "s" : ""} ativado${effects.length > 1 ? "s" : ""} · ${esc(effectName(effects[0].source))}</summary><ul>${effects.map((e) => `<li><strong>${esc(effectName(e.source))}</strong> · ${esc(e.text)}</li>`).join("")}</ul></details>`
+    : "";
+  if (previous && !reducedMotion.matches) {
+    for (const key of new Set(effects.map((e) => e.source))) {
+      const node = document.querySelector(`[data-relic="${CSS.escape(key)}"]`);
+      if (node)
+        tween(
+          node,
+          [
+            { transform: "scale(1)", filter: "brightness(1)" },
+            { transform: "scale(1.2)", filter: "brightness(1.9)" },
+            { transform: "scale(1)", filter: "brightness(1)" },
+          ],
+          { duration: 850 },
+        );
+    }
+  }
+}
+function bossPortrait(b) {
+  const tile =
+    {
+      ferrugem: 0,
+      sinos: 1,
+      gemeas: b.active === "b" ? 3 : 2,
+      cobrador: 4,
+      cinzas: 5,
+      astronomo: 6,
+      rei: 7,
+      novica: 1,
+      escrivao: 4,
+      aprendiz: 6,
+    }[b.identity] ?? 8;
+  return `<div class="portrait-frame"><div class="boss-portrait" role="img" aria-label="Retrato de ${esc(b.name)}" style="--portrait-x:${(tile % 3) * 50}%;--portrait-y:${Math.floor(tile / 3) * 50}%"></div><span class="portrait-crest" aria-hidden="true">${b.kind === "boss" ? "♛" : b.kind === "elite" ? "⚔" : "♠"}</span></div>`;
+}
+function renderPresence(b) {
+  const el = $("boss-presence");
+  const presence = b.presence || {
+    mood: b.result ? (b.result.score > 0 ? "win" : "loss") : "intro",
+    object: b.kind === "elite" ? "DESAFIANTE DA CORTE" : "JOGADOR DA ESTRADA",
+    speech: b.result
+      ? b.result.score > 0
+        ? "Uma boa mão. Veremos a próxima."
+        : "A mesa ainda tem suas surpresas."
+      : "As cartas estão na mesa.",
+  };
+  el.hidden = false;
+  el.dataset.mood = presence.mood;
+  el.dataset.boss = b.identity;
+  el.dataset.sister = b.active;
+  // Preserve the portrait element between moves so its lighting never restarts on a hit.
+  const identity = b.identity + ":" + b.active;
+  if (el.dataset.identity !== identity) {
+    el.dataset.identity = identity;
+    el.innerHTML = `${bossPortrait(b)}<div class="presence-copy"><span class="boss-object"></span><p></p><div class="boss-meter"></div></div>`;
+  }
+  el.querySelector(".boss-object").textContent =
+    presence.object +
+    (b.identity === "gemeas"
+      ? ` · ${b.active === "a" ? "Íris" : "Véspera"}`
+      : b.identity === "rei"
+        ? ` · Ato ${b.act}`
+        : "");
+  el.querySelector("p").textContent = `“${presence.speech}”`;
+  el.querySelector(".boss-meter").innerHTML =
+    b.identity === "sinos"
+      ? `<div class="bell-meter" aria-label="${b.bells} de 7 sinos">${Array.from({ length: 7 }, (_, i) => `<i class="${i < b.bells ? "lit" : ""}">♧</i>`).join("")}</div>`
+      : "";
+}
+let soundEnabled = false,
+  soundContext = null;
+try {
+  soundEnabled = localStorage.getItem("count-queen-sound") === "on";
+} catch (_) {}
+function soundLabel() {
+  $("sound-button").textContent = soundEnabled
+    ? "Som: ligado"
+    : "Som: desligado";
+  $("sound-button").setAttribute("aria-pressed", String(soundEnabled));
+}
+soundLabel();
+function tone(frequency, delay = 0, duration = 0.12) {
+  if (!soundEnabled || !soundContext || soundContext.state !== "running")
+    return;
+  const time = soundContext.currentTime + delay,
+    oscillator = soundContext.createOscillator(),
+    gain = soundContext.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(frequency, time);
+  gain.gain.setValueAtTime(0, time);
+  gain.gain.linearRampToValueAtTime(0.045, time + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+  oscillator.connect(gain).connect(soundContext.destination);
+  oscillator.start(time);
+  oscillator.stop(time + duration + 0.02);
+  oscillator.onended = () => {
+    oscillator.disconnect();
+    gain.disconnect();
+  };
+}
+async function enableAudio() {
+  try {
+    soundContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    await soundContext.resume();
+  } catch (_) {
+    soundEnabled = false;
+    soundLabel();
+  }
+}
+$("sound-button").addEventListener("click", async () => {
+  soundEnabled = !soundEnabled;
+  if (soundEnabled) await enableAudio();
+  try {
+    localStorage.setItem("count-queen-sound", soundEnabled ? "on" : "off");
+  } catch (_) {}
+  soundLabel();
+  tone(440);
+});
+document.addEventListener(
+  "pointerdown",
+  () => {
+    if (soundEnabled) enableAudio();
+  },
+  { once: true },
+);
+function playSound(previous, visualDelay = 0) {
+  const cue = visualDelay / 1000;
+  if (state.phase === "resultado" && previous.phase !== "resultado") {
+    const win = state.battle.result.score > 0;
+    tone(win ? 523 : 220, cue, 0.24);
+    tone(win ? 659 : 196, cue + 0.12, 0.24);
+    tone(win ? 784 : 165, cue + 0.24, 0.3);
+  } else if (
+    state.battle?.hands?.flatMap((h) => h.cards).length >
+    (previous.battle?.hands?.flatMap((h) => h.cards).length || 0)
+  )
+    tone(320, 0, 0.07);
+  if (
+    state.battle?.identity === "sinos" &&
+    state.battle.bells !== previous.battle?.bells
+  )
+    tone(880, 0.1, 0.65);
+}
+
+function flyChips(from, to, count = 4, delay = 0) {
+  if (reducedMotion.matches || !from || !to) return;
+  const a = from.getBoundingClientRect(),
+    b = to.getBoundingClientRect();
+  if (!a.width || !b.width) return;
+  for (let i = 0; i < count; i++) {
+    const chip = document.createElement("i");
+    chip.className = "flying-chip";
+    chip.setAttribute("aria-hidden", "true");
+    const x = a.left + a.width / 2 - 12,
+      y = a.top + a.height / 2 - 12;
+    Object.assign(chip.style, { left: x + "px", top: y + "px" });
+    document.body.append(chip);
+    motionLayers.add(chip);
+    const dx = b.left + b.width / 2 - 12 - x,
+      dy = b.top + b.height / 2 - 12 - y;
+    tween(
+      chip,
+      [
+        { opacity: 0, transform: "scale(.7) rotate(0deg)" },
+        { opacity: 1, offset: 0.12 },
+        {
+          opacity: 1,
+          transform: `translate(${dx * 0.5}px,${dy * 0.5 - 36}px) rotate(${60 + i * 15}deg)`,
+          offset: 0.5,
+        },
+        {
+          opacity: 0,
+          transform: `translate(${dx}px,${dy}px) scale(.65) rotate(160deg)`,
+        },
+      ],
+      {
+        duration: 620,
+        delay: delay + i * 65,
+        fill: "backwards",
+        easing: "cubic-bezier(.25,.6,.35,1)",
+      },
+      () => {
+        chip.remove();
+        motionLayers.delete(chip);
+      },
+    );
+  }
+}
+function resultAtmosphere(delay) {
+  const score = state.battle.result.score;
+  const flare = document.createElement("div");
+  flare.className = "table-flare";
+  flare.setAttribute("aria-hidden", "true");
+  flare.style.setProperty(
+    "--flare-color",
+    score > 0 ? "#ecd28a44" : score < 0 ? "#a7594c33" : "#afbfbb22",
+  );
+  $("table").append(flare);
+  motionLayers.add(flare);
+  tween(
+    flare,
+    [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
+    { duration: 1050, delay, fill: "backwards" },
+    () => {
+      flare.remove();
+      motionLayers.delete(flare);
+    },
+  );
+  flyChips(
+    $("table-bet"),
+    score >= 0 ? $("balance") : $("boss-presence"),
+    score > 0 ? 6 : 3,
+    delay + 160,
+  );
+  const portrait = document.querySelector(".portrait-frame");
+  if (portrait)
+    tween(
+      portrait,
+      score > 0
+        ? [
+            { transform: "none" },
+            { transform: "translateY(3px) rotate(-2deg)", offset: 0.35 },
+            { transform: "none" },
+          ]
+        : [
+            { transform: "none" },
+            { transform: "translateY(-3px)", offset: 0.35 },
+            { transform: "none" },
+          ],
+      { duration: 650, delay },
+    );
+  for (const hand of document.querySelectorAll(
+    '.player-hand[data-outcome="win"] .card',
+  )) {
+    tween(
+      hand,
+      [
+        { transform: "none" },
+        { transform: "translateY(-5px)", offset: 0.4 },
+        { transform: "none" },
+      ],
+      { duration: 700, delay: delay + 60 },
+    );
+  }
+  if (score <= 0) return;
+  const r = $("player-hands").getBoundingClientRect();
+  for (let i = 0; i < 12; i++) {
+    const mote = document.createElement("i");
+    mote.className = "victory-mote";
+    mote.setAttribute("aria-hidden", "true");
+    Object.assign(mote.style, {
+      left: r.left + r.width / 2 + (i - 5.5) * 9 + "px",
+      top: r.top + r.height * 0.45 + "px",
+    });
+    document.body.append(mote);
+    motionLayers.add(mote);
+    tween(
+      mote,
+      [
+        { opacity: 0, transform: "scale(.4)" },
+        { opacity: 0.8, offset: 0.2 },
+        {
+          opacity: 0,
+          transform: `translate(${(i - 5.5) * 13}px,${-45 - (i % 4) * 15}px) rotate(${i * 37}deg) scale(.2)`,
+        },
+      ],
+      {
+        duration: 900 + (i % 3) * 100,
+        delay: delay + i * 22,
+        fill: "backwards",
+      },
+      () => {
+        mote.remove();
+        motionLayers.delete(mote);
+      },
+    );
+  }
+}

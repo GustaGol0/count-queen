@@ -37,8 +37,8 @@ def battle(g, player, rival, identity='mesa', kind='mesa', bet=10):
 
 
 class CampaignTests(unittest.TestCase):
-    def test_catalog_has_six_per_rarity_and_twelve_oaths(self):
-        self.assertEqual(Counter(v['raridade'] for v in RELICS.values()),{'comum':6,'incomum':6,'raro':6,'mitico':6})
+    def test_catalog_has_27_relics_and_twelve_oaths(self):
+        self.assertEqual(Counter(v['raridade'] for v in RELICS.values()),{'comum':6,'incomum':6,'raro':9,'mitico':6})
         self.assertEqual(len(OATHS),12)
 
     def test_boss_pairs_and_map_connections_are_saved_without_reroll(self):

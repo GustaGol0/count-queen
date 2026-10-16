@@ -21,11 +21,11 @@ def decide(g, policy):
         if len(shop['bought'])<2 and affordable:return 'comprar',{'valor':policy.choice(affordable)}
         return 'sair',{}
     if phase=='oficina':
-        unmarked=[c for c in p['deck']['cards'].values() if not c['marca'] and not c['temporaria']]
+        unmarked=[c for c in p['deck']['cards'].values() if not c['marca'] and not c['temporaria'] and c['id']!=p['reserved']]
         if unmarked:return 'marcar',{'carta':policy.choice(unmarked)['id'],'valor':policy.choice(['real','dourada','quebradica','maldita'])}
         return 'sair',{}
     if phase in ('evento','refugio','sacrario'):
-        options=[o[0] for o in g.story_options()]
+        options=[o['id'] for o in g.public()['options'] if o.get('enabled',True)]
         if phase=='refugio':return 'escolha',{'valor':'reserva'}
         if p['fichas']<30:options=[x for x in options if x not in ('pacto','caridade','pagar','estudar')]
         if p['prestigio']<5:options=[x for x in options if x!='favor']
@@ -44,6 +44,7 @@ def decide(g, policy):
     if phase=='aposta':return 'apostar',{'valor':max(1,min(10,int(p['fichas'])))}
     if phase=='seguro':return 'recusar_seguro',{}
     if phase=='revelacao':return ('cetro' if g.total(g.b['dealer'])>=17 else 'liquidar'),{}
+    if phase=='ultima_palavra':return ('comprar_final' if g.total(g.b['hands'][0])<17 else 'aceitar_resultado'),{}
     if phase=='resultado':return 'continuar',{}
     if phase=='oraculo':
         hand=g.b['hands'][g.b['current']]
@@ -52,6 +53,8 @@ def decide(g, policy):
         return 'escolher',{'valor':i}
     if phase=='jogando':
         b=g.b; hand=b['hands'][b['current']]; score=g.total(hand); actions=g.available()
+        if 'guardar' in actions and score>=18:return 'guardar',{}
+        if 'transferir' in actions and score>=17:return 'transferir',{'carta':hand['cards'][-1]['id'],'destino':b['current']+1}
         if 'coroa' in actions:return 'coroa',{'valor':max(1,min(11,b['limit']-score))}
         if 'bencao' in actions and 12<=score<18:return 'bencao',{}
         if 'brasa' in actions and score<14:return 'brasa',{}
@@ -63,7 +66,7 @@ def decide(g, policy):
 
 
 def play(seed):
-    g=Adventure(seed); g.new('Viajante','m'); policy=random.Random(seed)
+    g=Adventure(seed); g.s['unlocks']=['origem_herdeiro','origem_exilada','origem_trapaceiro']; g.new('Viajante','m',['viajante','herdeiro','exilada','trapaceiro'][seed%4]); policy=random.Random(seed)
     phases=Counter()
     for step in range(2000):
         phases[g.s['phase']]+=1

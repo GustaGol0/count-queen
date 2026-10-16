@@ -1,6 +1,36 @@
-# Catálogo — Count & Queen 0.5.0
+# Catálogo — Count & Queen · Mesa Viva
 
 Os valores abaixo correspondem ao motor da campanha visual. Bônus de lucro somam até ×3.
+
+## Origens
+
+| Origem | Início e contrapartida | Desbloqueio permanente |
+| --- | --- | --- |
+| Viajante | 200 fichas, 52 cartas tradicionais. | Desde o início. |
+| Herdeiro Arruinado | 140 fichas e Balança do Carrasco. Dívida familiar de 120; retém 25% do lucro das vitórias até quitar. | Vença qualquer encontro. |
+| Exilada | 140 fichas, Broche da Prudência e uma bênção no primeiro encontro. Os quatro Reis viram cartas 2. | Termine uma jornada, com vitória ou derrota. |
+| Trapaceiro | 160 fichas, Bolso Falso e caminho da Tirania. Relíquias nas lojas custam 15% a mais. | Divida uma mão. |
+
+A dívida familiar retém primeiro 25% do lucro, até o saldo restante. Se também
+houver o juramento da Dívida, ele retém metade do lucro restante. Seguro,
+recompensas de encontro e bônus fixos não sofrem essa retenção. Descontos e
+acréscimos de loja se multiplicam antes do arredondamento final.
+
+## Histórias recorrentes
+
+Nos nós de evento, histórias iniciadas têm prioridade de continuação a partir da
+região seguinte. A origem favorece a história relacionada. Não há repetição de um
+capítulo na mesma região nem novos sorteios ao recarregar. Escolher seguir viagem
+encerra a cadeia; uma dívida existente continua ativa. No desfecho da traição
+da mensageira, é preciso reparar ou assumir a perda de prestígio.
+
+- **Tinta que não seca:** ajude ou denuncie Lia; depois aceite uma carta Dourada ou limpe registros; ao fim financie a fuga para receber Bolso Falso ou entregue-a por fichas e perda de prestígio. Trapaceiro paga menos pela fuga.
+- **A dívida da família:** aceite crédito, quite o saldo ou use influência. Adiar aumenta a dívida; quem quitou recebe um recibo recompensado no próximo capítulo.
+- **Cartas para o exílio:** escolte a mensageira, proteja ou venda a informação. A proteção conduz à Última Palavra; a traição exige reparação ou causa perda de prestígio.
+
+Os custos exatos aparecem em cada escolha. Relíquias já possuídas concedem a
+compensação em fichas indicada no evento. Cartas adicionadas respeitam o limite de
+80. O diário registra a escolha e sua consequência.
 
 ## Relíquias — comum
 
@@ -34,6 +64,9 @@ Os valores abaixo correspondem ao motor da campanha visual. Bônus de lucro soma
 | Tesoura do Destino | Uma vez por encontro, descarta a carta que causaria estouro e para automaticamente. Não funciona após dobrar. |
 | Máscara do Impostor | Uma vez por encontro, permite dividir figuras/10 diferentes com o mesmo valor em pontos. |
 | Ampulheta do Usurário | Uma compra por loja pode ser feita pela metade do preço. O restante, com 25% de juros, é cobrado na próxima região. Dívida pendente bloqueia outro empréstimo. |
+| Bolso Falso | Uma vez por encontro, guarde a última carta pedida enquanto a mão estiver ativa, tiver mais de duas cartas e não estiver dobrada ou sob previsão. Não aceita cartas temporárias ou emprestadas. A carta abre a próxima rodada sem blackjack natural; fica fora das pilhas e não pode ser alterada na oficina enquanto guardada. Não resgata um estouro já resolvido. |
+| Balança do Carrasco | Uma vez por encontro, antes de pedir na mão dividida atual, transfira uma carta dela para outra mão dividida ainda não jogada. Deixe ao menos uma carta na origem. Sem novas apostas, compras ou blackjack natural; a mão de destino pode estourar. |
+| Última Palavra | Uma compra por encontro após o rival parar e revelar. Exige uma única mão válida, sem dobra, desistência ou natural, e compras permitidas pelo contrato. Aceitar o resultado preserva o uso. O Cetro é resolvido antes; a compra é direta, sem Oráculo, mas Tesoura e Coroa podem agir. |
 
 ## Relíquias — mitico
 
@@ -58,7 +91,7 @@ Os valores abaixo correspondem ao motor da campanha visual. Bônus de lucro soma
 | Jamais Abaixo a Cabeça | +25% de prestígio ganho e +20 fichas por encontro vencido sem derrotas. Contrapartida: sem seguro ou desistência. |
 | Sob o Número Sete | +50% de lucro ao vencer com 7. Contrapartida: perder com 7 custa 1 de prestígio (2 com Pacto). |
 | Nenhum Rei à Minha Mesa | +45% de lucro ao vencer sem J, Q ou K. Contrapartida: −25% se sua mão vencedora tiver figuras. |
-| A Estrada é Meu Palácio | Uma terceira alternativa exclusiva nos eventos. Contrapartida: lojas 20% mais caras. |
+| A Estrada é Meu Palácio | Uma alternativa exclusiva nos eventos simples; as histórias recorrentes têm suas próprias escolhas. Contrapartida: lojas 20% mais caras. |
 | Toda Dívida Será Paga | Recebe 150 fichas agora. Metade do lucro das vitórias paga uma dívida de 225; depois, desconto permanente de 10% nas lojas. |
 | Caçador de Coroas | Mais uma opção de relíquia em elites e +50% de fichas na recompensa dos bosses. Contrapartida: −20% de lucro nas mesas comuns. |
 | A Última Ficha Me Pertence | +100% de lucro ao apostar todo o saldo. Contrapartida: nessas rodadas, sem seguro/desistência e derrota custa 2 de prestígio (4 com Pacto). |

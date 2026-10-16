@@ -19,6 +19,19 @@ def sample():
     return g
 
 
+def arranged(own, rival, relics=()):
+    """Real combat with deterministic cards for layout and interaction checks."""
+    g=sample();g.p.update(juramentos=[],itens=list(relics))
+    def deck(ranks):
+        d=g.deck(ranks);d['draw']=list(reversed(list(d['cards'])))
+        return d
+    g.p['deck']=deck(own)
+    g.start_battle('mesa','mesa')
+    g.b['decks'][g.b['active']]=deck(rival)
+    g.start_round(10)
+    return g
+
+
 def main():
     artifacts=Path(tempfile.mkdtemp(prefix='count-queen-ui-'))
     with tempfile.TemporaryDirectory() as temp:
@@ -41,7 +54,7 @@ def main():
                 page.screenshot(path=str(artifacts/'mapa.png'),full_page=True)
                 before=page.request.get(url+'/api/estado').json();page.reload();expect(page.locator('.map-board')).to_be_visible()
                 assert before==page.request.get(url+'/api/estado').json()
-                for width in [390,768,1024]:
+                for width in [320,390,768,1024]:
                     page.set_viewport_size({'width':width,'height':950})
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),f'Map overflow {width}'
                     page.screenshot(path=str(artifacts/f'mapa-{width}.png'),full_page=True)
@@ -55,9 +68,16 @@ def main():
                 g=sample();g.start_battle('boss','ferrugem');g.end_encounter(True);cases['recompensa']=g.export()
                 g=sample();g.start_battle('boss','cobrador');cases['contrato']=g.export()
                 g=sample();g.start_battle('boss','ferrugem');g.start_round(10);cases['combate']=g.export()
+                g=arranged(['8']*8+['2']*24,['10','7'],['joias_gemeas'])
+                for _ in range(3):g.interact('dividir',{})
+                assert len(g.b['hands'])==4
+                cases['quatro-maos']=g.export()
+                g=arranged(['2']*24,['10','7'])
+                for _ in range(5):g.interact('pedir',{})
+                cases['mao-longa']=g.export()
                 g=sample();g.s.update(region=3,king_style='dobras',king_face='7');g.start_battle('boss','rei');g.b.update(act=2);g.s.update(phase='cobranca_real',offers=['dobrar','sete']);cases['cobranca-real']=g.export()
                 g.s['phase']='consagrar';cases['consagrar']=g.export()
-                g.s['phase']='destino';cases['destino']=g.export()
+                g.b['act']=3;g.s['phase']='destino';cases['destino']=g.export()
                 g.s['phase']='pedagio';cases['pedagio']=g.export()
                 g=sample();g.start_battle('boss','cinzas');g.end_encounter(False);cases['revanche']=g.export()
                 g=sample();g.finish(False,'Uma nova lenda espera.');cases['fim']=g.export()
@@ -68,7 +88,33 @@ def main():
                     page.set_viewport_size({'width':390,'height':950})
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),f'Overflow: {label}'
                     if label in ('combate','destino','recompensa'):page.screenshot(path=str(artifacts/f'{label}-390.png'),full_page=True)
+                    page.set_viewport_size({'width':320,'height':800})
+                    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),f'Overflow 320: {label}'
                     page.set_viewport_size({'width':1440,'height':1000})
+                # Compact laptop: normal combat and its actions fit on one screen.
+                with mesa.lock:mesa.game.restore(cases['combate'])
+                page.set_viewport_size({'width':1366,'height':768});page.goto(url)
+                expect(page.locator('#actions')).to_be_visible()
+                assert page.evaluate('document.documentElement.scrollHeight<=innerHeight'), 'Combat needs vertical scrolling on laptop'
+                page.screenshot(path=str(artifacts/'combate-notebook.png'))
+                # Each dock entry opens locally, Esc closes it, shortcuts never leak through.
+                before=page.request.get(url+'/api/estado').json()
+                for selector,title in [('#journey-button','Sua jornada'),('#table-deck-button','Seu baralho'),('#history-button','Crônica da jornada'),('#inventory-button','Relíquias & juramentos')]:
+                    page.locator(selector).click()
+                    expect(page.get_by_role('heading',name=title,exact=True)).to_be_visible()
+                    page.keyboard.press('p')
+                    assert before==page.request.get(url+'/api/estado').json()
+                    page.keyboard.press('Escape');expect(page.locator('#info-dialog')).not_to_be_visible()
+                page.locator('[data-relic]').first.click()
+                expect(page.locator('#info-dialog .relic-detail')).to_have_count(1)
+                page.keyboard.press('Escape')
+                # A real round can still be completed through the new controls.
+                page.get_by_role('button',name='Parar [S]',exact=True).click()
+                expect(page.locator('#result')).to_be_visible()
+                page.reload();expect(page.locator('#result')).to_be_visible()
+                page.get_by_role('button',name='Continuar',exact=True).click()
+                expect(page.locator('#bet-form')).to_be_visible()
+                page.set_viewport_size({'width':1440,'height':1000})
                 # Aquisição real: quatro raridades, fechamento e sem repetir ao recarregar.
                 from count_queen.content import RELICS
                 assert set(page.evaluate('Object.keys(sigils)')) == set(RELICS)
@@ -104,6 +150,7 @@ def main():
                 page.locator('#inventory-button').click();expect(page.get_by_role('heading',name='Relíquias & juramentos')).to_be_visible();page.get_by_role('button',name='Fechar janela').click()
                 with mesa.lock:mesa.game.restore(cases['destino'])
                 page.goto(url);page.get_by_role('button',name='Usurpar',exact=True).click();expect(page.locator('#bet-form')).to_be_visible();page.locator('#bet').fill('10');page.locator('#deal').click();expect(page.locator('#crown-form')).to_be_visible();page.locator('#crown-value').fill('1');page.get_by_role('button',name='Fixar valor').click()
+                expect(page.locator('#dealer-name')).to_contain_text('Ato 3/3')
                 assert not errors,errors
                 print(json.dumps({'browser_errors':errors,'screens':list(cases),'save_survives_reload':True,'screenshots':str(artifacts)},ensure_ascii=False))
                 browser.close()

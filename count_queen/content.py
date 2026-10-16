@@ -57,7 +57,7 @@ OATHS = {
     'honra': entry('Jamais Abaixo a Cabeça', '+25% de prestígio ganho e +20 fichas por encontro vencido sem derrotas. Contrapartida: sem seguro ou desistência.'),
     'sete': entry('Sob o Número Sete', '+50% de lucro ao vencer com 7. Contrapartida: perder com 7 custa 1 de prestígio (2 com Pacto).'),
     'humilde': entry('Nenhum Rei à Minha Mesa', '+45% de lucro ao vencer sem J, Q ou K. Contrapartida: −25% se sua mão vencedora tiver figuras.'),
-    'estrada': entry('A Estrada é Meu Palácio', 'Uma terceira alternativa exclusiva nos eventos. Contrapartida: lojas 20% mais caras.'),
+    'estrada': entry('A Estrada é Meu Palácio', 'Uma alternativa exclusiva nos eventos simples. Histórias recorrentes têm escolhas próprias. Contrapartida: lojas 20% mais caras.'),
     'divida': entry('Toda Dívida Será Paga', 'Recebe 150 fichas agora. Metade do lucro das vitórias paga uma dívida de 225; depois, desconto permanente de 10% nas lojas.'),
     'cacador': entry('Caçador de Coroas', 'Mais uma opção de relíquia em elites e +50% de fichas na recompensa dos bosses. Contrapartida: −20% de lucro nas mesas comuns.'),
     'ultima': entry('A Última Ficha Me Pertence', '+100% de lucro ao apostar todo o saldo. Contrapartida: nessas rodadas, sem seguro/desistência e derrota custa 2 de prestígio (4 com Pacto).'),
@@ -106,4 +106,26 @@ CHARGES = {
     'divida': 'Taxa fixa de 5 fichas ao vencer uma rodada.',
     'cacador': 'O Rei compra até 19.',
     'ultima': 'Apostar todo o saldo acrescenta 1 de prestígio à penalidade de derrota.',
+}
+
+
+ORIGINS = {
+    'viajante': entry('Viajante', '200 fichas e um baralho tradicional de 52 cartas.', unlock='Disponível desde o início.'),
+    'herdeiro': entry('Herdeiro Arruinado', '140 fichas, Balança do Carrasco e dívida familiar de 120. 25% do lucro de cada vitória paga essa dívida.', unlock='Vença qualquer encontro.'),
+    'exilada': entry('Exilada', '140 fichas, Broche da Prudência e uma bênção inicial. Os quatro Reis do baralho são substituídos por cartas 2.', unlock='Conclua uma jornada, com vitória ou derrota.'),
+    'trapaceiro': entry('Trapaceiro', '160 fichas, Bolso Falso e caminho da Tirania. Relíquias nas lojas custam 15% a mais.', unlock='Divida uma mão durante uma jornada.'),
+}
+RELICS.update({
+    'bolso_falso': entry('Bolso Falso', 'Uma vez por encontro, guarde sua última carta pedida, enquanto a mão ainda estiver ativa. Ela será sua primeira carta da próxima rodada, sem blackjack natural. Não guarda cartas temporárias ou emprestadas.', raridade='raro', preco=150),
+    'balanca_carrasco': entry('Balança do Carrasco', 'Uma vez por encontro, antes de pedir na mão dividida atual, transfira uma de suas cartas para outra mão dividida ainda não jogada. Mantenha pelo menos uma carta na origem.', raridade='raro', preco=150),
+    'ultima_palavra': entry('Última Palavra', 'Após a revelação do rival, compre exatamente uma carta, uma vez por encontro. Aceitar o resultado preserva o uso. Exige uma única mão válida, sem dobra, desistência, blackjack ou limite de compras atingido. Compra direta, sem Oráculo.', raridade='raro', preco=150),
+})
+BOSS_PRESENTATION = {
+    'ferrugem': {'object':'Moeda de ferrugem', 'intro':'A casa sempre cobra sua parte.', 'win':'Essa moeda ainda volta para mim.', 'loss':'Ouviu? É o som do seu troco.', 'double':'Finalmente alguém com coragem.'},
+    'sinos': {'object':'Sete sinos', 'intro':'Escute antes de pedir.', 'win':'Até o silêncio pode abençoar.', 'loss':'O próximo sino será por você.', 'double':'A fé também exige uma aposta.'},
+    'gemeas': {'object':'Espelho partido', 'intro':'Qual de nós você pensa conhecer?', 'win':'Minha irmã não cometerá esse erro.', 'loss':'Você estava olhando para a outra.'},
+    'cobrador': {'object':'Livro de dívidas', 'intro':'Toda assinatura deixa uma marca.', 'win':'Considerarei isso um adiantamento.', 'loss':'Seu nome continua na minha lista.'},
+    'cinzas': {'object':'Braseiro', 'intro':'Deixe uma carta para o fogo.', 'win':'Uma vitória também deixa cinzas.', 'loss':'Tudo encontra seu fim na chama.'},
+    'astronomo': {'object':'Astrolábio', 'intro':'Os limites estão em movimento.', 'win':'Uma órbita que eu não previ.', 'loss':'As estrelas já haviam decidido.'},
+    'rei': {'object':'Coroa vazia', 'intro':'Mostre o que a estrada fez de você.', 'win':'Sua promessa está começando a pesar.', 'loss':'A coroa ainda reconhece seu dono.'},
 }
